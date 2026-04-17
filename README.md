@@ -9,6 +9,9 @@ To use this project:
 ## Cleaning pipeline (Go)
 
 The cleaner reads a CSV in streaming mode, normalizes values, and outputs a cleaned CSV plus a QC report.
+It also removes unused columns created during synthetic data generation.
+
+Detailed documentation: see [docs/cleaning_procedure.md](docs/cleaning_procedure.md).
 
 Example:
 

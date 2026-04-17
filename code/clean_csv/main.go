@@ -35,6 +35,12 @@ var (
 		"null": {},
 		"none": {},
 	}
+	dropColumns = map[string]struct{}{
+		"synthetic_pattern_type":         {},
+		"synthetic_campaign_id":          {},
+		"synthetic_is_seeded_suspicious": {},
+		"consumer disputed?":             {},
+	}
 	dateLayouts = []string{
 		"01/02/06",
 		"01/02/2006",
@@ -43,19 +49,18 @@ var (
 )
 
 type QCReport struct {
-	GeneratedAt            string         `json:"generated_at"`
-	Source                 string         `json:"source"`
-	Output                 string         `json:"output"`
-	RowsIn                 int            `json:"rows_in"`
-	RowsOut                int            `json:"rows_out"`
-	RowsDeduped            int            `json:"rows_deduped"`
-	RowsShort              int            `json:"rows_short"`
-	RowsLong               int            `json:"rows_long"`
-	Missingness            map[string]int `json:"missingness"`
-	ParseErrors            map[string]int `json:"parse_errors"`
-	SyntheticPatternCounts map[string]int `json:"synthetic_pattern_counts,omitempty"`
-	NarrativeLength        LengthStats    `json:"narrative_length"`
-	UniqueComplaintIDs     int            `json:"unique_complaint_ids"`
+	GeneratedAt        string         `json:"generated_at"`
+	Source             string         `json:"source"`
+	Output             string         `json:"output"`
+	RowsIn             int            `json:"rows_in"`
+	RowsOut            int            `json:"rows_out"`
+	RowsDeduped        int            `json:"rows_deduped"`
+	RowsShort          int            `json:"rows_short"`
+	RowsLong           int            `json:"rows_long"`
+	Missingness        map[string]int `json:"missingness"`
+	ParseErrors        map[string]int `json:"parse_errors"`
+	NarrativeLength    LengthStats    `json:"narrative_length"`
+	UniqueComplaintIDs int            `json:"unique_complaint_ids"`
 }
 
 type LengthStats struct {
@@ -169,11 +174,17 @@ func run(inPath, outPath, qcPath string, dedup bool, limit int, workers int) err
 	}
 
 	header[0] = strings.TrimPrefix(header[0], "\ufeff")
+	origHeader := make([]string, len(header))
 	colIdx := make(map[string]int, len(header))
 	for i, name := range header {
 		trimmed := strings.TrimSpace(name)
-		header[i] = trimmed
+		origHeader[i] = trimmed
 		colIdx[strings.ToLower(trimmed)] = i
+	}
+
+	outHeader, keepIdx := filterHeader(origHeader)
+	if len(outHeader) == 0 {
+		return errors.New("all columns removed by drop list")
 	}
 
 	idxDateReceived := findIndex(colIdx, "date received")
@@ -182,18 +193,16 @@ func run(inPath, outPath, qcPath string, dedup bool, limit int, workers int) err
 	idxComplaintID := findIndex(colIdx, "complaint id")
 	idxZip := findIndex(colIdx, "zip code")
 	idxSyntheticTS := findIndex(colIdx, "synthetic_date_received_ts")
-	idxPattern := findIndex(colIdx, "synthetic_pattern_type")
 	idxCompany := findIndex(colIdx, "company")
 	idxProduct := findIndex(colIdx, "product")
 	idxIssue := findIndex(colIdx, "issue")
 
-	missingness := make(map[string]int, len(header))
-	for _, name := range header {
+	missingness := make(map[string]int, len(outHeader))
+	for _, name := range outHeader {
 		missingness[name] = 0
 	}
 
 	parseErrors := make(map[string]int)
-	patternCounts := make(map[string]int)
 	var narrativeStats lengthAccumulator
 
 	var seenDedup map[string]struct{}
@@ -204,7 +213,7 @@ func run(inPath, outPath, qcPath string, dedup bool, limit int, workers int) err
 
 	bufferedOut := bufio.NewWriter(outFile)
 	writer := csv.NewWriter(bufferedOut)
-	if err := writer.Write(header); err != nil {
+	if err := writer.Write(outHeader); err != nil {
 		return fmt.Errorf("write header: %w", err)
 	}
 
@@ -315,21 +324,15 @@ func run(inPath, outPath, qcPath string, dedup bool, limit int, workers int) err
 				}
 			}
 
-			if idxPattern >= 0 && idxPattern < len(row) {
-				if row[idxPattern] != "" {
-					patternCounts[row[idxPattern]]++
-				}
-			}
-
 			if idxComplaintID >= 0 && idxComplaintID < len(row) {
 				if row[idxComplaintID] != "" {
 					seenComplaintIDs[row[idxComplaintID]] = struct{}{}
 				}
 			}
 
-			for i := range row {
-				if row[i] == "" {
-					missingness[header[i]]++
+			for i, idx := range keepIdx {
+				if idx >= 0 && idx < len(row) && row[idx] == "" {
+					missingness[outHeader[i]]++
 				}
 			}
 
@@ -345,7 +348,13 @@ func run(inPath, outPath, qcPath string, dedup bool, limit int, workers int) err
 			}
 
 			if shouldWrite {
-				if err := writer.Write(row); err != nil {
+				outRow := make([]string, len(keepIdx))
+				for i, idx := range keepIdx {
+					if idx >= 0 && idx < len(row) {
+						outRow[i] = row[idx]
+					}
+				}
+				if err := writer.Write(outRow); err != nil {
 					return fmt.Errorf("write row %d: %w", rowsIn, err)
 				}
 				rowsOut++
@@ -371,19 +380,18 @@ func run(inPath, outPath, qcPath string, dedup bool, limit int, workers int) err
 	}
 
 	report := QCReport{
-		GeneratedAt:            time.Now().UTC().Format(time.RFC3339),
-		Source:                 inPath,
-		Output:                 outPath,
-		RowsIn:                 rowsIn,
-		RowsOut:                rowsOut,
-		RowsDeduped:            rowsDeduped,
-		RowsShort:              rowsShort,
-		RowsLong:               rowsLong,
-		Missingness:            missingness,
-		ParseErrors:            parseErrors,
-		SyntheticPatternCounts: patternCounts,
-		NarrativeLength:        narrativeStats.Stats(),
-		UniqueComplaintIDs:     len(seenComplaintIDs),
+		GeneratedAt:        time.Now().UTC().Format(time.RFC3339),
+		Source:             inPath,
+		Output:             outPath,
+		RowsIn:             rowsIn,
+		RowsOut:            rowsOut,
+		RowsDeduped:        rowsDeduped,
+		RowsShort:          rowsShort,
+		RowsLong:           rowsLong,
+		Missingness:        missingness,
+		ParseErrors:        parseErrors,
+		NarrativeLength:    narrativeStats.Stats(),
+		UniqueComplaintIDs: len(seenComplaintIDs),
 	}
 
 	if err := os.MkdirAll(filepath.Dir(qcPath), 0o755); err != nil {
@@ -476,6 +484,25 @@ func firstError(errCh <-chan error) error {
 	default:
 		return nil
 	}
+}
+
+func filterHeader(header []string) ([]string, []int) {
+	out := make([]string, 0, len(header))
+	keepIdx := make([]int, 0, len(header))
+	for i, name := range header {
+		if shouldDropColumn(name) {
+			continue
+		}
+		out = append(out, name)
+		keepIdx = append(keepIdx, i)
+	}
+	return out, keepIdx
+}
+
+func shouldDropColumn(name string) bool {
+	key := strings.ToLower(strings.TrimSpace(name))
+	_, ok := dropColumns[key]
+	return ok
 }
 
 func findIndex(idx map[string]int, name string) int {
