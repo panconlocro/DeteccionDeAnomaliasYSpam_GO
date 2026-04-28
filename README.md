@@ -1,5 +1,47 @@
 ## Setup / Data
 
+## Quickstart (Go + Notebooks)
+
+Prerequisites:
+- Go 1.21+
+- Python 3.10+ (recommended)
+
+### 1) Go (cleaning pipeline)
+
+You need a CSV under `data/` (this folder is gitignored).
+
+Fetch deps:
+
+```powershell
+go mod tidy
+```
+
+Run the cleaner:
+
+```powershell
+go run ./code/clean_csv -in data/complaints-2026-04-14_21_03.enriched.csv -out data/complaints-2026-04-14_21_03.cleaned.csv -qc data/complaints-2026-04-14_21_03.qc.json -dedup=true -workers=8
+```
+
+### 2) Python (venv for notebooks)
+
+Windows (PowerShell):
+
+```powershell
+./scripts/setup_venv.ps1
+./.venv/Scripts/Activate.ps1
+jupyter lab
+```
+
+macOS/Linux:
+
+```bash
+bash scripts/setup_venv.sh
+source .venv/bin/activate
+jupyter lab
+```
+
+If VS Code asks for a kernel, pick: `DeteccionDeAnomalias (venv)`.
+
 The `data/` directory contains a large CSV file and is not included in the repository.
 
 To use this project:
