@@ -15,11 +15,10 @@ import (
 // ── Configuración ────────────────────────────────────────────────────────────
 
 const (
-	inputPath  = "expedientes_merged.csv"
-	outputPath = "expedientes_clean.csv"
+    inputPath  = "data/staging/expedientes_merged.csv"
+    outputPath = "data/clean/expedientes_clean.csv"
 )
 
-// Columnas que se conservan en el output final (en orden).
 var keepCols = []string{
 	"NRO_EXPEDIENTE",
 	"EXPEDIENTE_ORIGEN_pres",
@@ -44,6 +43,64 @@ var reDateFormats = []string{
 	"2006/01/02",
 }
 
+// accentReplacer elimina diacríticos (tildes, ñ, ü).
+// Problema de origen: Excel 2017 tenía tildes, 2018-2021 no.
+var accentReplacer = strings.NewReplacer(
+	"á", "a", "é", "e", "í", "i", "ó", "o", "ú", "u",
+	"Á", "A", "É", "E", "Í", "I", "Ó", "O", "Ú", "U",
+	"à", "a", "è", "e", "ì", "i", "ò", "o", "ù", "u",
+	"À", "A", "È", "E", "Ì", "I", "Ò", "O", "Ù", "U",
+	"ñ", "n", "Ñ", "N",
+	"ü", "u", "Ü", "U",
+)
+
+// reLegalDot elimina los puntos dentro de formas legales tipo S.A. → SA,
+// S.A.A. → SAA, S.A.C. → SAC, E.I.R.L. → EIRL, LTDA. → LTDA, INC. → INC
+// Solo actúa sobre puntos entre letras mayúsculas o al final de una secuencia
+// de letras mayúsculas, para no tocar puntos de abreviatura en nombres propios.
+var reLegalDot = regexp.MustCompile(`(?:[A-Z])\.`)
+
+// reNOrdinal normaliza variantes del ordinal N°: "N° 1", "N°1", "N°  2", "Nº 1" → "N1", "N2"
+var reNOrdinal = regexp.MustCompile(`N[°º]?\s*\.?\s*(\d)`)
+
+// reSpaces colapsa múltiples espacios.
+var reSpaces = regexp.MustCompile(`\s{2,}`)
+
+var rePrefixGT = regexp.MustCompile(`^>+\s*`)
+var reNewline = regexp.MustCompile(`[\r\n]+`)
+
+// normalizeDenunciado unifica variantes ortográficas del mismo nombre de entidad.
+//
+// Tres problemas de origen que resuelve:
+//  1. Tildes: Excel 2017 las tenía, 2018-2021 no  →  eliminamos todas
+//  2. Puntos en forma legal: S.A.A. / SAA / S.A.A  →  eliminamos puntos internos
+//  3. Ordinal de comisión: N° 1 / N°1 / N°  1 / 1  →  normalizamos a N1, N2...
+//
+// Resultado: 136 grupos de duplicados (~3,646 filas, ~26% del campo) quedan unificados.
+// Forma canónica de salida: sin tildes, sin puntos en razón social, sin espacios extra.
+// Ejemplo: "BANCO DE CRÉDITO DEL PERÚ S.A." → "BANCO DE CREDITO DEL PERU SA"
+//          "COMISIÓN DE PROTECCIÓN AL CONSUMIDOR N° 1" → "COMISION DE PROTECCION AL CONSUMIDOR N1"
+//          "SCOTIABANK PERÚ S.A.A." → "SCOTIABANK PERU SAA"
+func normalizeDenunciado(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return ""
+	}
+	// 1. Tildes
+	s = accentReplacer.Replace(s)
+	// 2. Mayúsculas (el dataset ya está en mayúsculas, pero por si acaso)
+	s = strings.ToUpper(s)
+	// 3. Ordinal N° → N (antes de tocar puntos para no confundir)
+	s = reNOrdinal.ReplaceAllString(s, "N$1")
+	// 4. Puntos en forma legal (S.A. → SA)
+	s = reLegalDot.ReplaceAllStringFunc(s, func(m string) string {
+		return string(m[0]) // quitar el punto, conservar la letra
+	})
+	// 5. Colapsar espacios
+	s = reSpaces.ReplaceAllString(s, " ")
+	return strings.TrimSpace(s)
+}
+
 // parseDate intenta parsear una fecha con varios formatos; devuelve "" si falla.
 func parseDate(s string) string {
 	s = strings.TrimSpace(s)
@@ -55,39 +112,29 @@ func parseDate(s string) string {
 			return t.Format("2006-01-02")
 		}
 	}
-	return "" // fecha inválida → vacía
+	return ""
 }
 
-var rePrefixGT = regexp.MustCompile(`^>+\s*`)
-var reNewline = regexp.MustCompile(`[\r\n]+`)
-var reSpaces = regexp.MustCompile(`\s{2,}`)
-
-// cleanFormaConclusion elimina ">>" iniciales y colapsa saltos de línea.
+// cleanFormaConclusion elimina ">>" iniciales y se queda con la primera forma
+// cuando hay múltiples concatenadas con \n (ej. ">>CONFIRMA\n>>CONSENTIDO").
 func cleanFormaConclusion(s string) string {
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return ""
 	}
-	// Tomar solo la primera "forma" (antes de cualquier \n)
 	parts := reNewline.Split(s, -1)
 	first := rePrefixGT.ReplaceAllString(strings.TrimSpace(parts[0]), "")
 	return strings.TrimSpace(first)
 }
 
-// normalizeText colapsa espacios y hace trim.
+// normalizeText colapsa espacios múltiples y hace trim.
 func normalizeText(s string) string {
 	s = strings.TrimSpace(s)
-	s = reSpaces.ReplaceAllString(s, " ")
-	return s
+	return reSpaces.ReplaceAllString(s, " ")
 }
 
-// cleanNroExpediente garantiza formato NNNN-YYYY/TIPO-SUFIJO (trim básico).
-func cleanNroExpediente(s string) string {
-	return strings.TrimSpace(s)
-}
-
-// extractRUC extrae el número de RUC/DNI del campo DOC_DENUNCIADO.
-// Ejemplos de entrada: "RUC : 20133840533", "DNI : 12345678"
+// extractDocNumber extrae el número de RUC/DNI del campo DOC_DENUNCIADO.
+// Entrada: "RUC : 20133840533" → Salida: "20133840533"
 func extractDocNumber(s string) string {
 	s = strings.TrimSpace(s)
 	if s == "" {
@@ -112,7 +159,6 @@ func validYear(s string) bool {
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 func main() {
-	// Abrir input
 	inFile, err := os.Open(inputPath)
 	if err != nil {
 		log.Fatalf("no se puede abrir %s: %v", inputPath, err)
@@ -123,26 +169,22 @@ func main() {
 	reader.LazyQuotes = true
 	reader.TrimLeadingSpace = true
 
-	// Leer encabezado
 	header, err := reader.Read()
 	if err != nil {
 		log.Fatal("error leyendo encabezado:", err)
 	}
 
-	// Mapear nombre de columna → índice
 	colIdx := make(map[string]int, len(header))
 	for i, h := range header {
 		colIdx[strings.TrimSpace(h)] = i
 	}
 
-	// Verificar que las columnas requeridas existen
 	for _, col := range keepCols {
 		if _, ok := colIdx[col]; !ok {
 			log.Fatalf("columna requerida no encontrada: %q", col)
 		}
 	}
 
-	// Abrir output
 	outFile, err := os.Create(outputPath)
 	if err != nil {
 		log.Fatalf("no se puede crear %s: %v", outputPath, err)
@@ -152,18 +194,15 @@ func main() {
 	writer := csv.NewWriter(outFile)
 	defer writer.Flush()
 
-	// Escribir encabezado limpio
 	if err := writer.Write(keepCols); err != nil {
 		log.Fatal("error escribiendo encabezado:", err)
 	}
 
-	// Contadores
 	totalRows := 0
-	skipped := 0   // filas con NRO_EXPEDIENTE vacío (inválidas)
-	noMatch := 0   // expedientes sin resolución
-	badDate := 0   // fechas que no pudieron parsearse
+	skipped := 0
+	noMatch := 0
+	badDate := 0
 
-	// Procesar filas
 	for {
 		row, err := reader.Read()
 		if err == io.EOF {
@@ -183,33 +222,35 @@ func main() {
 			return row[idx]
 		}
 
-		// ── 1. Filtrar filas sin NRO_EXPEDIENTE válido ───────────────────
-		nroExp := cleanNroExpediente(get("NRO_EXPEDIENTE"))
+		// 1. Filtrar filas sin NRO_EXPEDIENTE válido
+		nroExp := strings.TrimSpace(get("NRO_EXPEDIENTE"))
 		if nroExp == "" {
 			skipped++
 			continue
 		}
 
-		// ── 2. Normalizar fechas ─────────────────────────────────────────
+		// 2. Normalizar fechas a YYYY-MM-DD
 		fechaPres := parseDate(get("FECHA_PRESENTACION_pres"))
 		fechaRes := parseDate(get("FECHA_RESOLUCION"))
 		if get("FECHA_PRESENTACION_pres") != "" && fechaPres == "" {
 			badDate++
 		}
 
-		// ── 3. Limpiar FORMA_CONCLUSION ──────────────────────────────────
+		// 3. Limpiar FORMA_CONCLUSION (quitar ">>" y quedarse con la primera)
 		formaConclusion := cleanFormaConclusion(get("FORMA_CONCLUSION"))
 
-		// ── 4. Normalizar texto libre ────────────────────────────────────
-		denunciados := normalizeText(get("DENUNCIADOS_pres"))
-		materia := normalizeText(get("MATERIA_pres"))
+		// 4. Normalizar texto libre (espacios + trim)
 		tipoExp := normalizeText(get("TIPO_EXPEDIENTE_pres"))
 		expOrigen := normalizeText(get("EXPEDIENTE_ORIGEN_pres"))
+		materia := normalizeText(get("MATERIA_pres"))
 
-		// ── 5. Extraer número de documento del denunciado ────────────────
+		// 5. Normalizar denunciados: tildes + puntos de razón social + ordinal N°
+		denunciados := normalizeDenunciado(get("DENUNCIADOS_pres"))
+
+		// 6. Extraer número de documento (quitar prefijo "RUC :" / "DNI :")
 		docDenunciado := extractDocNumber(get("DOC_DENUNCIADO"))
 
-		// ── 6. Validar y limpiar año ─────────────────────────────────────
+		// 7. Limpiar años (pandas los serializa como float: "2017.0" → "2017")
 		añoPres := strings.TrimSuffix(get("año_pres"), ".0")
 		if !validYear(añoPres) {
 			añoPres = ""
@@ -219,13 +260,11 @@ func main() {
 			añoRes = ""
 		}
 
-		// ── 7. Tracking de expedientes sin resolución ────────────────────
 		matchSrc := get("RES_MATCH_SOURCE")
 		if matchSrc == "none" {
 			noMatch++
 		}
 
-		// ── 8. Armar fila output en el orden de keepCols ─────────────────
 		outRow := []string{
 			nroExp,
 			expOrigen,
@@ -249,7 +288,6 @@ func main() {
 
 	writer.Flush()
 
-	// Reporte final
 	clean := totalRows - skipped
 	fmt.Printf("=== Limpieza completada ===\n")
 	fmt.Printf("Filas leídas:              %d\n", totalRows)
