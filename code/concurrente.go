@@ -38,10 +38,10 @@ func main() {
 
 	repetidos := make(map[string]int)
 	for _, row := range data {
-		if len(row) < 18 {
+		if len(row) < 17 {
 			continue
 		}
-		detalle := strings.TrimSpace(row[16])
+		detalle := strings.TrimSpace(row[15])
 		repetidos[detalle]++
 	}
 
@@ -110,22 +110,33 @@ func worker(bloque [][]string, repetidos map[string]int, wg *sync.WaitGroup) {
 
 	for _, row := range bloque {
 
-		if len(row) < 18 {
+		if len(row) < 17 {
 			continue
 		}
 
-		detalle := strings.TrimSpace(row[16])
-		hora := strings.TrimSpace(row[17])
+		detalle := strings.TrimSpace(row[15])
+		hora := strings.TrimSpace(row[16])
 
-		if repetidos[detalle] > 5 {
-			localAlertas++
+		sospechoso := false
+
+		if repetidos[detalle] >= 3 {
+			sospechoso = true
 		}
 
-		if strings.HasPrefix(hora, "03:") {
-			localAlertas++
+		if strings.HasPrefix(hora, "00:") ||
+			strings.HasPrefix(hora, "01:") ||
+			strings.HasPrefix(hora, "02:") ||
+			strings.HasPrefix(hora, "03:") ||
+			strings.HasPrefix(hora, "04:") ||
+			strings.HasPrefix(hora, "05:") {
+			sospechoso = true
 		}
 
-		if len(detalle) < 30 {
+		if len(detalle) < 80 {
+			sospechoso = true
+		}
+
+		if sospechoso {
 			localAlertas++
 		}
 	}
