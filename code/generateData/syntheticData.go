@@ -14,6 +14,7 @@ import (
 	"time"
 )
 
+// Parametros de generacion y distribucion de patrones.
 const (
 	tipoNormal  = 0
 	tipoBomb    = 1
@@ -30,6 +31,7 @@ const (
 	progressMod = 100000
 )
 
+// Plantillas y componentes de texto sintetico.
 var (
 	spamTexts = []string{
 		"Presento queja formal por incumplimiento de contrato y solicito sancion inmediata.",
@@ -94,8 +96,10 @@ func main() {
 	}
 
 	rng := rand.New(rand.NewSource(*seed))
+	// Precalcular etiquetas spam/normal para respetar la distribucion objetivo.
 	tipos := buildTipos(*target, rng)
 
+	// Estado para patrones de spam por grupos.
 	bombRemain := 0
 	bombHour := 0
 	bombMinute := 0
@@ -105,6 +109,7 @@ func main() {
 	fantDen := ""
 
 	for i := 0; i < *target; i++ {
+		// Muestreo con reemplazo desde las filas base.
 		base := rows[rng.Intn(len(rows))]
 		out := make([]string, len(outHeader))
 		for inIdx, outIdx := range inToOut {
@@ -129,6 +134,7 @@ func main() {
 		esSpam := "0"
 		tipoSpam := "normal"
 
+		// Aplicar el patron de spam seleccionado (o mantener normal).
 		switch tipos[i] {
 		case tipoBomb:
 			if bombRemain == 0 {
@@ -190,6 +196,7 @@ func main() {
 }
 
 func readCSV(path string) ([]string, [][]string, error) {
+	// Lee el CSV completo en memoria para permitir muestreo aleatorio.
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, nil, err
@@ -220,6 +227,7 @@ func readCSV(path string) ([]string, [][]string, error) {
 }
 
 func buildHeader(header []string) ([]string, []int, map[string]int) {
+	// Asegura columnas requeridas y construye indices de acceso rapido.
 	outHeader := append([]string{}, header...)
 	outIndex := make(map[string]int, len(outHeader))
 	for i, name := range outHeader {
@@ -243,6 +251,7 @@ func buildHeader(header []string) ([]string, []int, map[string]int) {
 
 func buildTipos(total int, rng *rand.Rand) []uint8 {
 	tipos := make([]uint8, total)
+	// Calcula conteos por porcentaje y luego mezcla el orden.
 	nBomb := int(float64(total) * pctBomb)
 	nDup := int(float64(total) * pctDup)
 	nNoct := int(float64(total) * pctNoct)
@@ -278,6 +287,7 @@ func buildTipos(total int, rng *rand.Rand) []uint8 {
 }
 
 func getField(row []string, index map[string]int, name string) string {
+	// Devuelve el valor de una columna por nombre si existe.
 	idx, ok := index[name]
 	if !ok || idx < 0 || idx >= len(row) {
 		return ""
@@ -286,6 +296,7 @@ func getField(row []string, index map[string]int, name string) string {
 }
 
 func setField(row []string, index map[string]int, name, value string) {
+	// Asigna el valor de una columna por nombre si existe.
 	idx, ok := index[name]
 	if !ok || idx < 0 || idx >= len(row) {
 		return
@@ -294,6 +305,7 @@ func setField(row []string, index map[string]int, name, value string) {
 }
 
 func normalizeToken(value, fallback string) string {
+	// Normaliza valores vacios o "nan" a un fallback.
 	v := strings.TrimSpace(value)
 	if v == "" {
 		return fallback
@@ -305,6 +317,7 @@ func normalizeToken(value, fallback string) string {
 }
 
 func detalleNormal(materia, tipo, denunciado string, rng *rand.Rand) string {
+	// Genera un detalle normal con plantillas y variacion ligera.
 	tipo = strings.ToLower(tipo)
 	materia = strings.ToLower(materia)
 	if materia == "" {
@@ -330,6 +343,7 @@ func detalleNormal(materia, tipo, denunciado string, rng *rand.Rand) string {
 }
 
 func horaNormal(rng *rand.Rand) string {
+	// Genera hora con distribucion realista de oficina.
 	hour := 0
 	if rng.Float64() < 0.85 {
 		hour = 8 + rng.Intn(10)
@@ -340,6 +354,7 @@ func horaNormal(rng *rand.Rand) string {
 }
 
 func variarFecha(fecha string, rng *rand.Rand) string {
+	// Aplica un deslizamiento de dias para diversificar fechas.
 	fecha = strings.TrimSpace(fecha)
 	if fecha == "" || strings.EqualFold(fecha, "nan") {
 		return fecha
@@ -353,6 +368,7 @@ func variarFecha(fecha string, rng *rand.Rand) string {
 }
 
 func variarExpediente(nro string, rng *rand.Rand) string {
+	// Genera o reemplaza el sufijo numerico del expediente.
 	n := strings.TrimSpace(nro)
 	if n == "" {
 		return fmt.Sprintf("EXP-%06d", rng.Intn(900000)+100000)
