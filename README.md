@@ -1,70 +1,130 @@
-## Setup / Data
+# Deteccion de Anomalias y Spam (Go + Python)
 
-## Quickstart (Go + Notebooks)
+Proyecto de analisis de expedientes para detectar patrones sospechosos y comparar desempeno entre procesamiento secuencial y concurrente en Go.
 
-Prerequisites:
+## Objetivo
+
+Este repositorio implementa un flujo completo:
+
+1. Ingesta de archivos fuente (Excel).
+2. Merge y estandarizacion inicial.
+3. Limpieza de datos.
+4. Generacion de dataset sintetico grande.
+5. Deteccion de alertas con dos enfoques:
+	- secuencial,
+	- concurrente.
+
+## Requisitos
+
 - Go 1.21+
-- Python 3.10+ (recommended)
+- Python 3.10+ (recomendado)
 
-### 1) Go (cleaning pipeline)
+## Estructura principal
 
-You need a CSV under `data/` (this folder is gitignored).
+- `code/ingestData.py`: descarga archivos fuente desde Google Drive y los separa en `resueltos` y `presentados`.
+- `code/mergeData.py`: une y completa datos de expedientes en `data/staging/expedientes_merged.csv`.
+- `code/clean_csv/clean_expedientes.go`: limpia y normaliza columnas clave en `data/clean/expedientes_clean.csv`.
+- `code/generateData/syntheticData.go`: genera dataset sintetico masivo en `data/synthetic/expedientes_1M.csv`.
+- `code/Deteccion_Secuencial/secuencial.go`: deteccion de alertas en una sola goroutine.
+- `code/Deteccion_Concurrente/concurrente.go`: deteccion de alertas en paralelo con workers.
 
-Fetch deps:
+## Configuracion de entorno Python
 
-```powershell
-go mod tidy
-```
-
-Run the cleaner:
-
-```powershell
-go run ./code/clean_csv -in data/complaints-2026-04-14_21_03.enriched.csv -out data/complaints-2026-04-14_21_03.cleaned.csv -qc data/complaints-2026-04-14_21_03.qc.json -dedup=true -workers=8
-```
-
-### 2) Python (venv for notebooks)
-
-Windows (PowerShell):
+### Windows (PowerShell)
 
 ```powershell
 ./scripts/setup_venv.ps1
 ./.venv/Scripts/Activate.ps1
-jupyter lab
 ```
 
-macOS/Linux:
+### macOS/Linux
 
 ```bash
 bash scripts/setup_venv.sh
 source .venv/bin/activate
-jupyter lab
 ```
 
-If VS Code asks for a kernel, pick: `DeteccionDeAnomalias (venv)`.
+El script instala dependencias de `requirements.txt` y registra el kernel de Jupyter `DeteccionDeAnomalias (venv)`.
 
-The `data/` directory contains a large CSV file and is not included in the repository.
+## Flujo recomendado de ejecucion
 
-To use this project:
-1. Create a `data/` directory in the project root
-2. Add your CSV file(s) to the `data/` directory
+Ejecuta los pasos en este orden desde la raiz del proyecto.
 
-## Cleaning pipeline (Go)
+### 1. Ingesta de archivos fuente
 
-The cleaner reads a CSV in streaming mode, normalizes values, and outputs a cleaned CSV plus a QC report.
-It also removes unused columns created during synthetic data generation.
-
-Detailed documentation: see [docs/cleaning_procedure.md](docs/cleaning_procedure.md).
-
-Example:
-
-```
-go run ./code/clean_csv -in data/complaints-2026-04-14_21_03.enriched.csv -out data/complaints-2026-04-14_21_03.cleaned.csv -qc data/complaints-2026-04-14_21_03.qc.json -dedup=true -workers=8
+```bash
+python code/ingestData.py
 ```
 
-Flags:
-- `-in` input CSV path
-- `-out` output CSV path
-- `-qc` QC report JSON path
-- `-dedup` enable/disable deduplication
-- `-limit` process only the first N rows (0 = all)
-- `-workers` number of worker goroutines
+Salida esperada:
+
+- `data/raw/presentados/*`
+- `data/raw/resueltos/*`
+
+### 2. Merge de presentados y resueltos
+
+```bash
+python code/mergeData.py
+```
+
+Salida esperada:
+
+- `data/staging/expedientes_merged.csv`
+
+### 3. Limpieza y normalizacion
+
+```bash
+go run ./code/clean_csv/clean_expedientes.go
+```
+
+Salida esperada:
+
+- `data/clean/expedientes_clean.csv`
+
+### 4. Generacion de dataset sintetico
+
+Comando por defecto (1M filas):
+
+```bash
+go run ./code/generateData/syntheticData.go
+```
+
+Comando personalizado:
+
+```bash
+go run ./code/generateData/syntheticData.go -in data/clean/expedientes_clean.csv -out data/synthetic/expedientes_1M.csv -n 1000000 -seed 42
+```
+
+Salida esperada:
+
+- `data/synthetic/expedientes_1M.csv`
+
+### 5. Deteccion secuencial
+
+```bash
+go run ./code/Deteccion_Secuencial/secuencial.go
+```
+
+### 6. Deteccion concurrente
+
+```bash
+go run ./code/Deteccion_Concurrente/concurrente.go
+```
+
+Ambos programas leen el mismo dataset sintetico y reportan:
+
+- alertas detectadas,
+- tiempo de lectura,
+- promedio de procesamiento,
+- media recortada,
+- tiempo total estimado.
+
+## Documentacion
+
+- Limpieza de datos: [docs/limpieza.md](docs/limpieza.md)
+- Generacion sintetica: [docs/synthetic_data_generation.md](docs/synthetic_data_generation.md)
+- Analisis secuencial vs concurrente: [docs/secuencial_vs_concurrente.md](docs/secuencial_vs_concurrente.md)
+
+## Nota sobre datos
+
+Los datos de `data/` pueden ser pesados y no necesariamente se versionan completos en Git. Si te falta informacion para ejecutar el flujo, empieza por `code/ingestData.py`.
