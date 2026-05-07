@@ -14,8 +14,6 @@ import (
 
 const inputFile = "data/synthetic/expedientes_1M.csv"
 
-// alertasGlobal es el contador compartido entre goroutines.
-// El acceso se protege con mutex para evitar race conditions.
 var (
 	alertasGlobal int
 	mutex         sync.Mutex
@@ -63,23 +61,19 @@ func main() {
 
 	idx := buildIndex(header)
 
-	// Fase 1 — conteos globales (secuencial, una sola vez fuera del benchmark)
+	// ── Fase 1: conteos globales (fuera del benchmark) ───────────────────
 	detalleCount := make(map[string]int)
-	minuteCount  := make(map[string]int)
 	fantCount    := make(map[string]int)
 
 	for _, row := range data {
 		detalle := col(row, idx, "DETALLE_QUEJA")
-		hora    := col(row, idx, "HORA_PRESENTACION")
 		if detalle != "" {
 			detalleCount[detalle]++
 		}
-		if len(hora) >= 5 {
-			minuteCount[hora[:5]]++
-		}
 		for _, v := range row {
+			v = strings.TrimSpace(v)
 			if strings.Contains(v, "EMPRESA_FANTASMA_") {
-				fantCount[strings.TrimSpace(v)]++
+				fantCount[v]++
 			}
 		}
 	}
@@ -99,7 +93,7 @@ func main() {
 
 	for i := 1; i <= *runs; i++ {
 		start := time.Now()
-		alertasFinal = ejecutarConcurrente(data, idx, detalleCount, minuteCount, fantCount, *numWorkers, chunkSize)
+		alertasFinal = ejecutarConcurrente(data, idx, detalleCount, fantCount, *numWorkers, chunkSize)
 		elapsed := time.Since(start).Seconds()
 		tiempos = append(tiempos, elapsed)
 		fmt.Printf("Ejecución %d: %.6f segundos\n", i, elapsed)
@@ -140,17 +134,12 @@ func main() {
 	}
 }
 
-// ejecutarConcurrente divide el dataset en chunks y lanza una goroutine
-// por worker usando sync.WaitGroup para esperar que todas terminen.
-// Cada goroutine acumula alertas localmente y al final usa sync.Mutex
-// para sumar al contador global, evitando race conditions.
 func ejecutarConcurrente(
 	data [][]string,
 	idx map[string]int,
-	detalleCount, minuteCount, fantCount map[string]int,
+	detalleCount, fantCount map[string]int,
 	numWorkers, chunkSize int,
 ) int {
-	// Resetear contador global antes de cada ejecución
 	mutex.Lock()
 	alertasGlobal = 0
 	mutex.Unlock()
@@ -161,7 +150,7 @@ func ejecutarConcurrente(
 		inicio := i * chunkSize
 		fin := inicio + chunkSize
 		if i == numWorkers-1 {
-			fin = len(data) // el último worker toma el resto
+			fin = len(data)
 		}
 		if inicio >= len(data) {
 			break
@@ -171,28 +160,25 @@ func ejecutarConcurrente(
 		}
 
 		wg.Add(1)
-		// Cada goroutine procesa su lote de filas en paralelo
-		go worker(data[inicio:fin], idx, detalleCount, minuteCount, fantCount, &wg)
+		go worker(data[inicio:fin], idx, detalleCount, fantCount, &wg)
 	}
 
-	// Esperar a que todas las goroutines terminen
 	wg.Wait()
-
 	return alertasGlobal
 }
 
-// worker procesa un lote (bloque) de filas de forma independiente.
-// Acumula alertas en una variable local para minimizar la contención
-// del mutex — solo adquiere el lock una vez al terminar su bloque.
+// worker procesa su bloque de filas de forma independiente.
+// Acumula en localAlertas sin ningún lock durante el loop.
+// Solo adquiere mutex una vez al final para sumar al global.
 func worker(
 	bloque [][]string,
 	idx map[string]int,
-	detalleCount, minuteCount, fantCount map[string]int,
+	detalleCount, fantCount map[string]int,
 	wg *sync.WaitGroup,
 ) {
 	defer wg.Done()
 
-	localAlertas := 0 // contador local, sin contención
+	localAlertas := 0
 
 	for _, row := range bloque {
 		detalle := col(row, idx, "DETALLE_QUEJA")
@@ -200,19 +186,12 @@ func worker(
 
 		sospechoso := false
 
-		// Patrón 1 — queja duplicada
-		if detalleCount[detalle] >= 5 {
+		// Patrón 1+2 — queja duplicada y bombardeo
+		if detalleCount[detalle] >= 20000 {
 			sospechoso = true
 		}
 
-		// Patrón 2 — bombardeo por tiempo (mismo minuto + texto repetido)
-		if len(hora) >= 5 {
-			if minuteCount[hora[:5]] >= 500 && detalleCount[detalle] >= 5 {
-				sospechoso = true
-			}
-		}
-
-		// Patrón 3 — ráfaga nocturna (00:xx a 04:xx)
+		// Patrón 3 — ráfaga nocturna
 		if len(hora) >= 2 {
 			hh := hora[:2]
 			if hh == "00" || hh == "01" || hh == "02" || hh == "03" || hh == "04" {
@@ -233,7 +212,6 @@ func worker(
 		}
 	}
 
-	// Único punto de contención: sumar el total local al global
 	mutex.Lock()
 	alertasGlobal += localAlertas
 	mutex.Unlock()

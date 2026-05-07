@@ -1,86 +1,136 @@
-# Detección secuencial vs concurrente en Go
+# Detección de Spam y Anomalías — Análisis Secuencial vs Concurrente
 
-Este documento explica qué hace cada programa, paso por paso, y después resume la diferencia entre ambos enfoques.
+## 1. Descripción del algoritmo
 
-## 1. Programa secuencial
+El sistema detecta patrones de spam en un dataset sintético de 1,000,000 registros del libro de reclamaciones. El algoritmo se divide en dos fases:
 
-Archivo: [code/Deteccion_Secuencial/secuencial.go](../code/Deteccion_Secuencial/secuencial.go)
+**Fase 1 — Conteo global** (ejecutada una sola vez, fuera del benchmark):  
+Se recorre el dataset completo para construir dos tablas hash:
+- `detalleCount`: frecuencia de cada texto de queja exacto.
+- `fantCount`: frecuencia de cada denunciado fantasma (`EMPRESA_FANTASMA_XXXX`).
 
-### Qué hace
+Esta fase es idéntica en ambas versiones y no se mide en el benchmark porque es un preprocesamiento que en producción se haría una sola vez.
 
-1. Define como entrada fija el archivo `data/synthetic/expedientes_1M.csv`.
-2. Abre el CSV y lee todo su contenido en memoria con `csv.NewReader(...).ReadAll()`.
-3. Elimina la primera fila porque es la cabecera.
-4. Mide el tiempo de lectura por separado.
-5. Ejecuta 20 veces el mismo proceso para medir rendimiento.
-6. En cada ejecución llama a `procesarSecuencial(data)`.
-7. `procesarSecuencial` primero recorre todo el dataset para construir un mapa `repetidos` con la cantidad de veces que aparece cada valor de la columna 15, que en el código se llama `detalle`.
-8. Luego vuelve a recorrer todos los registros y evalúa si cada fila es sospechosa.
-9. Una fila se marca como sospechosa si cumple al menos una de estas reglas:
-   - el `detalle` aparece 3 veces o más en el dataset,
-   - la hora de la columna 16 empieza con `00:`, `01:`, `02:`, `03:`, `04:` o `05:`,
-   - el largo del texto `detalle` es menor que 80 caracteres.
-10. Si una fila es sospechosa, incrementa el contador local `alertas`.
-11. Al final imprime:
-   - alertas detectadas,
-   - tiempo de lectura del CSV,
-   - promedio de procesamiento,
-   - media recortada,
-   - tiempo total estimado.
+**Fase 2 — Detección** (la que se benchmarkea):  
+Se recorre el dataset fila a fila aplicando cuatro reglas sobre los conteos precalculados. Cada fila es independiente de las demás, lo que hace esta fase naturalmente paralelizable.
 
-### Qué significa el flujo interno
+### Patrones detectados
 
-El programa secuencial hace el trabajo de forma lineal. Primero construye el conteo global de repeticiones y después usa ese conteo para decidir qué filas levantarán alerta. No hay división del trabajo ni sincronización entre hilos porque todo ocurre en una sola goroutine.
+| Patrón | % en dataset | Regla de detección |
+|---|---|---|
+| Queja duplicada | 7% | `detalleCount[texto] >= 20000` |
+| Bombardeo por tiempo | 8% | `detalleCount[texto] >= 20000` (mismo umbral, textos compartidos) |
+| Ráfaga nocturna | 4% | `HORA_PRESENTACION` entre `00:xx` y `04:xx` |
+| Denunciado fantasma | 3% | Campo contiene `EMPRESA_FANTASMA_` y `fantCount[v] >= 3` |
 
-## 2. Programa concurrente
+> **Nota sobre el umbral `>= 20000`**: los textos de spam provienen de 3 plantillas fijas que se repiten ~23,000 veces cada una. Los textos normales usan plantillas distintas con un máximo de ~16,000 repeticiones. El umbral de 20,000 separa ambas distribuciones sin falsos positivos.
 
-Archivo: [code/Deteccion_Concurrente/concurrente.go](../code/Deteccion_Concurrente/concurrente.go)
+---
 
-### Qué hace
+## 2. Mecanismos de sincronización
 
-1. Usa el mismo archivo de entrada: `data/synthetic/expedientes_1M.csv`.
-2. Abre el CSV y lo carga completo en memoria.
-3. Elimina la cabecera.
-4. Antes de medir el bloque de ejecuciones, construye una vez el mapa `repetidos` con la frecuencia de cada `detalle`.
-5. Define `numWorkers := 4` y divide el dataset en 4 bloques del mismo tamaño aproximado.
-6. Ejecuta 20 veces `ejecutarConcurrente(data, repetidos, numWorkers, chunkSize)`.
-7. `ejecutarConcurrente` reinicia `alertasGlobal` en cero.
-8. Luego crea una `sync.WaitGroup` y lanza una goroutine por bloque.
-9. Cada goroutine ejecuta `worker(...)` sobre una porción del dataset.
-10. Cada worker revisa sus filas con la misma lógica de sospecha que el programa secuencial:
-   - frecuencia de `detalle` mayor o igual a 3,
-   - hora temprana,
-   - `detalle` con menos de 80 caracteres.
-11. Cada worker acumula sus resultados en una variable local `localAlertas`.
-12. Al terminar, el worker suma su resultado a la variable global `alertasGlobal` dentro de un `sync.Mutex` para evitar condiciones de carrera.
-13. `WaitGroup` espera a que terminen todas las goroutines antes de devolver el total.
-14. Igual que el secuencial, imprime alertas, tiempo de lectura, promedio, media recortada y tiempo total estimado.
+### Versión secuencial
 
-### Qué significa el flujo interno
+Recorre el dataset fila a fila en un único goroutine. No requiere ningún mecanismo de sincronización. Sirve como línea base para medir el speedup.
 
-El programa concurrente divide el trabajo entre varios workers. Cada worker procesa una parte del CSV en paralelo, pero todos leen el mismo mapa `repetidos`, que ya fue calculado antes y no se modifica durante la detección. La sincronización solo se usa para sumar el total final de alertas.
+### Versión concurrente
 
-## 3. Diferencia entre secuencial y concurrente
+Usa tres primitivas de sincronización de Go:
 
-### Secuencial
+**`sync.WaitGroup`**  
+Coordina el ciclo de vida de las goroutines. Se hace `wg.Add(1)` antes de lanzar cada worker y `defer wg.Done()` al inicio de cada uno. El hilo principal llama `wg.Wait()` y bloquea hasta que todos los workers terminen.
 
-- Procesa todo en orden, en una sola ejecución lineal.
-- No usa goroutines.
-- No necesita `Mutex` ni `WaitGroup`.
-- Calcula el mapa de repeticiones dentro de cada ejecución de `procesarSecuencial`.
-- Es más simple de seguir porque el control de flujo es directo.
+**`sync.Mutex`**  
+Protege el contador global `alertasGlobal` que es compartido entre todos los workers. Para minimizar la contención, cada worker acumula sus alertas en una variable **local** (`localAlertas`) durante todo su loop, y solo adquiere el mutex **una vez al final** para sumar al global. Esto significa que el lock se adquiere exactamente `numWorkers` veces por ejecución, independientemente del tamaño del dataset.
 
-### Concurrente
+**Goroutines como workers**  
+El dataset se divide en `N` chunks de tamaño `len(data) / numWorkers`. El último worker toma el resto para no perder filas. Cada goroutine procesa su chunk de forma completamente independiente — no comparte estado durante el loop, solo al sumar el resultado final.
 
-- Divide el dataset en varias partes y las procesa al mismo tiempo.
-- Usa 4 goroutines fijas.
-- Necesita `WaitGroup` para esperar a todos los workers.
-- Necesita `Mutex` para sumar de forma segura el total de alertas.
-- Calcula el mapa de repeticiones una sola vez fuera del bucle de benchmark.
-- Puede aprovechar mejor varios núcleos si el entorno lo permite.
+```go
+// Patrón de uso: localAlertas evita contención en el hot path
+func worker(bloque [][]string, ..., wg *sync.WaitGroup) {
+    defer wg.Done()
+    localAlertas := 0          // sin lock
+    for _, row := range bloque {
+        if esSospechoso(row) {
+            localAlertas++     // sin lock
+        }
+    }
+    mutex.Lock()               // lock solo una vez
+    alertasGlobal += localAlertas
+    mutex.Unlock()
+}
+```
 
-## 4. Resumen corto
+---
 
-Los dos programas detectan lo mismo con las mismas reglas. La diferencia está en cómo ejecutan el trabajo: el secuencial lo hace paso a paso en una sola rutina, y el concurrente reparte las filas entre varios workers para procesarlas en paralelo.
+## 3. Speedup y media recortada
 
-En este caso, el concurrente no solo gana por paralelismo, sino también porque evita reconstruir el mapa de repeticiones dentro de cada corrida medida.
+El benchmark corre 20 ejecuciones de la Fase 2 para cada versión y calcula:
+
+**Media recortada**: se ordenan los tiempos, se elimina el mínimo y el máximo, y se promedia el resto. Esto reduce el impacto de outliers causados por el scheduler del SO o picos de CPU de otros procesos.
+
+**Speedup**:
+
+$$S = \frac{T_{secuencial}}{T_{concurrente}}$$
+
+Donde ambos tiempos son la media recortada de las 20 ejecuciones.
+
+**Eficiencia paralela**:
+
+$$E = \frac{S}{N_{workers}}$$
+
+Un valor de E cercano a 1.0 indica que los workers están siendo aprovechados óptimamente. Valores bajos indican overhead de sincronización o cuellos de botella en memoria.
+
+---
+
+## 4. Análisis de speedup, scalability y trade-offs
+
+### Speedup esperado
+
+Con 4 workers sobre una tarea CPU-bound y paralelizable, la ley de Amdahl predice un speedup teórico máximo cercano a 4x. En la práctica se espera menos debido a:
+
+- Overhead de creación de goroutines (mínimo en Go, pero existe).
+- Contención de memoria: todos los workers leen los mismos mapas `detalleCount` y `fantCount` desde caché. Con datasets grandes esto puede causar cache misses.
+- El scheduler de Go (GOMAXPROCS) puede no mapear goroutines 1:1 a núcleos físicos dependiendo de la máquina.
+
+### Scalability
+
+La versión concurrente escala bien en la Fase 2 porque:
+
+- No hay escrituras compartidas durante el procesamiento (solo lecturas de los mapas precalculados).
+- La única escritura compartida (`alertasGlobal`) ocurre una vez por worker, no una vez por fila.
+- El trabajo está distribuido uniformemente (chunks de igual tamaño).
+
+El límite de escalabilidad está en la Fase 1 (conteo global), que permanece secuencial. Si el dataset creciera 10x, la Fase 1 dominaría el tiempo total y el speedup de la Fase 2 se volvería irrelevante.
+
+### Trade-offs
+
+| Aspecto | Secuencial | Concurrente |
+|---|---|---|
+| Complejidad del código | Baja | Media |
+| Riesgo de bugs | Bajo | Mayor (race conditions si se usa mal el mutex) |
+| Tiempo de procesamiento | Mayor | Menor |
+| Uso de CPU | 1 núcleo | N núcleos |
+| Uso de memoria | Sin overhead | Mínimo overhead por goroutines (~2KB c/u) |
+| Reproducibilidad | Determinista | Determinista (alertas), no determinista (tiempos) |
+
+---
+
+## 5. Uso y rendimiento de recursos
+
+### CPU
+
+La versión concurrente distribuye la Fase 2 entre N workers que corren en paralelo en núcleos distintos (Go usa `GOMAXPROCS = núcleos físicos` por defecto). El uso de CPU esperado es proporcional al número de workers hasta el límite de núcleos disponibles.
+
+### Memoria
+
+Ambas versiones cargan el dataset completo en RAM (`reader.ReadAll()`). Para 1,000,000 filas con ~20 columnas, el uso aproximado es:
+
+- Dataset en memoria: ~800 MB – 1.2 GB dependiendo del largo de los strings.
+- Mapas de conteo (`detalleCount`, `fantCount`): ~50–100 MB adicionales.
+- Overhead de goroutines: ~2 KB por goroutine × 4 workers = despreciable.
+
+### Observación sobre I/O
+
+La lectura del CSV (Fase 1 de I/O) es el cuello de botella más grande en tiempo absoluto. Paralelizar la Fase 2 reduce el tiempo de procesamiento pero no el tiempo de lectura, por lo que el speedup total (incluyendo I/O) es menor que el speedup de procesamiento puro.

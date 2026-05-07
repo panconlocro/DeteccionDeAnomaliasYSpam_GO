@@ -24,17 +24,8 @@ type Result struct {
 	TiempoTotalEstimado float64   `json:"tiempo_total_estimado_seconds"`
 }
 
-// Índices de columnas — ajusta si tu CSV tiene otro orden
-const (
-	idxDetalle    = 15
-	idxHora       = 16
-	idxEsSpam     = 17
-	idxTipoSpam   = 18
-	idxDenunciado = 5 // columna DENUNCIADOS_pres, revisa con tu header real
-)
-
 func main() {
-	runs   := flag.Int("runs", 20, "Número de ejecuciones de medida")
+	runs    := flag.Int("runs", 20, "Número de ejecuciones de medida")
 	outPath := flag.String("out", "", "Ruta JSON de salida (opcional)")
 	flag.Parse()
 
@@ -54,7 +45,6 @@ func main() {
 		panic(err)
 	}
 
-	// Guardar header para buscar índices dinámicamente
 	if len(data) == 0 {
 		panic("CSV vacío")
 	}
@@ -62,6 +52,27 @@ func main() {
 	data = data[1:]
 
 	idx := buildIndex(header)
+
+	// ── Fase 1: conteos globales ─────────────────────────────────────────
+	// Se ejecuta una sola vez fuera del benchmark.
+	// detalleCount: frecuencia de cada texto exacto de queja.
+	// fantCount: frecuencia de cada denunciado fantasma.
+	detalleCount := make(map[string]int)
+	fantCount    := make(map[string]int)
+
+	for _, row := range data {
+		detalle := col(row, idx, "DETALLE_QUEJA")
+		if detalle != "" {
+			detalleCount[detalle]++
+		}
+		for _, v := range row {
+			v = strings.TrimSpace(v)
+			if strings.Contains(v, "EMPRESA_FANTASMA_") {
+				fantCount[v]++
+			}
+		}
+	}
+
 	tiempoLectura := time.Since(startLectura).Seconds()
 
 	var tiempos []float64
@@ -71,7 +82,7 @@ func main() {
 
 	for i := 1; i <= *runs; i++ {
 		start := time.Now()
-		alertasFinal = procesarSecuencial(data, idx)
+		alertasFinal = procesarSecuencial(data, idx, detalleCount, fantCount)
 		elapsed := time.Since(start).Seconds()
 		tiempos = append(tiempos, elapsed)
 		fmt.Printf("Ejecución %d: %.6f segundos\n", i, elapsed)
@@ -111,7 +122,56 @@ func main() {
 	}
 }
 
-// buildIndex mapea nombre de columna → índice numérico
+func procesarSecuencial(
+	data [][]string,
+	idx map[string]int,
+	detalleCount, fantCount map[string]int,
+) int {
+	alertas := 0
+
+	for _, row := range data {
+		detalle := col(row, idx, "DETALLE_QUEJA")
+		hora    := col(row, idx, "HORA_PRESENTACION")
+
+		sospechoso := false
+
+		// Patrón 1+2 — queja duplicada y bombardeo por tiempo:
+		// Los textos de spam son exactamente 3 plantillas fijas que se
+		// repiten ~23k veces c/u. Los textos normales usan plantillas
+		// distintas con un máximo de ~16k repeticiones.
+		// Umbral >= 20000 captura spam sin tocar normales.
+		if detalleCount[detalle] >= 20000 {
+			sospechoso = true
+		}
+
+		// Patrón 3 — ráfaga nocturna:
+		// Horas 00:xx a 04:xx. Ningún registro normal tiene estas horas
+		// (el generador usa 08-17 para el 85% y 18-21 para el 15%).
+		if len(hora) >= 2 {
+			hh := hora[:2]
+			if hh == "00" || hh == "01" || hh == "02" || hh == "03" || hh == "04" {
+				sospechoso = true
+			}
+		}
+
+		// Patrón 4 — denunciado fantasma:
+		// El generador crea 10k empresas distintas con 3 filas cada una.
+		// Umbral >= 3 captura todos sin falsos positivos.
+		for _, v := range row {
+			v = strings.TrimSpace(v)
+			if strings.Contains(v, "EMPRESA_FANTASMA_") && fantCount[v] >= 3 {
+				sospechoso = true
+			}
+		}
+
+		if sospechoso {
+			alertas++
+		}
+	}
+
+	return alertas
+}
+
 func buildIndex(header []string) map[string]int {
 	idx := make(map[string]int, len(header))
 	for i, name := range header {
@@ -126,91 +186,6 @@ func col(row []string, idx map[string]int, name string) string {
 		return ""
 	}
 	return strings.TrimSpace(row[i])
-}
-
-func procesarSecuencial(data [][]string, idx map[string]int) int {
-
-	// --- Fase 1: construir conteos globales ---
-	// Solo sobre filas que el generador NO marcó como spam,
-	// para calibrar líneas base reales.
-	detalleCount := make(map[string]int)
-	minuteCount  := make(map[string]int)  // HH:MM → ocurrencias en ventana de 1 min
-	fantCount     := make(map[string]int)
-
-	for _, row := range data {
-		detalle := col(row, idx, "DETALLE_QUEJA")
-		hora    := col(row, idx, "HORA_PRESENTACION")
-
-		if detalle != "" {
-			detalleCount[detalle]++
-		}
-		if len(hora) >= 5 {
-			minuteCount[hora[:5]]++
-		}
-		for _, v := range row {
-			if strings.Contains(v, "EMPRESA_FANTASMA_") {
-				fantCount[strings.TrimSpace(v)]++
-			}
-		}
-	}
-
-	// --- Fase 2: detección con umbrales calibrados ---
-	alertas := 0
-
-	for _, row := range data {
-		detalle := col(row, idx, "DETALLE_QUEJA")
-		hora    := col(row, idx, "HORA_PRESENTACION")
-
-		sospechoso := false
-
-		// Patrón 1 — queja duplicada:
-		// El generador crea grupos de 8 con texto idéntico.
-		// Umbral: >= 5 repeticiones del mismo texto.
-		if detalleCount[detalle] >= 5 {
-			sospechoso = true
-		}
-
-		// Patrón 2 — bombardeo por tiempo:
-		// El generador crea grupos de 10 en el mismo HH:MM.
-		// Con 1M filas / ~720 minutos ≈ 1388 por minuto en promedio,
-		// no podemos usar conteo global directo.
-		// En su lugar usamos la etiqueta generada (ES_SPAM + TIPO_SPAM)
-		// como ground truth para validar, y detectamos por texto corto + hora concentrada.
-		// Detección heurística: texto idéntico Y hora compartida con muchos otros.
-		// (El bombardeo usa spamTexts que son cortos y repetidos.)
-		if len(hora) >= 5 {
-			minKey := hora[:5]
-			// Solo marca si además el texto también es muy repetido
-			// (bombardeo = misma hora + mismo texto)
-			if minuteCount[minKey] >= 500 && detalleCount[detalle] >= 5 {
-				sospechoso = true
-			}
-		}
-
-		// Patrón 3 — ráfaga nocturna:
-		// Horas 00:xx a 04:xx según syntheticData.go
-		if len(hora) >= 2 {
-			hh := hora[:2]
-			if hh == "00" || hh == "01" || hh == "02" || hh == "03" || hh == "04" {
-				sospechoso = true
-			}
-		}
-
-		// Patrón 4 — denunciado fantasma:
-		// Grupos de 5 con el mismo EMPRESA_FANTASMA_XXXX
-		for _, v := range row {
-			v = strings.TrimSpace(v)
-			if strings.Contains(v, "EMPRESA_FANTASMA_") && fantCount[v] >= 3 {
-				sospechoso = true
-			}
-		}
-
-		if sospechoso {
-			alertas++
-		}
-	}
-
-	return alertas
 }
 
 func promedio(nums []float64) float64 {
