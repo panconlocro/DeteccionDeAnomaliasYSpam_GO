@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -184,6 +185,12 @@ func main() {
 			log.Fatalf("columna requerida no encontrada: %q", col)
 		}
 	}
+
+	outDir := filepath.Dir(outputPath)
+	if err := os.MkdirAll(outDir, 0755); err != nil {
+		log.Fatalf("no se puede crear el directorio %s: %v", outDir, err)
+	}
+
 
 	outFile, err := os.Create(outputPath)
 	if err != nil {
