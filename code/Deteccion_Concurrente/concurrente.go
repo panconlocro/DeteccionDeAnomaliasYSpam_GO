@@ -1,3 +1,4 @@
+// concurrente.go
 package main
 
 import (
@@ -63,12 +64,19 @@ func main() {
 
 	// ── Fase 1: conteos globales (fuera del benchmark) ───────────────────
 	detalleCount := make(map[string]int)
+	minuteCount  := make(map[string]int) // clave: "FECHA_HH:MM"
 	fantCount    := make(map[string]int)
 
 	for _, row := range data {
 		detalle := col(row, idx, "DETALLE_QUEJA")
+		hora    := col(row, idx, "HORA_PRESENTACION")
+		fecha   := col(row, idx, "FECHA_PRESENTACION_pres")
+
 		if detalle != "" {
 			detalleCount[detalle]++
+		}
+		if len(hora) >= 5 && fecha != "" {
+			minuteCount[fecha+"_"+hora[:5]]++
 		}
 		for _, v := range row {
 			v = strings.TrimSpace(v)
@@ -93,7 +101,7 @@ func main() {
 
 	for i := 1; i <= *runs; i++ {
 		start := time.Now()
-		alertasFinal = ejecutarConcurrente(data, idx, detalleCount, fantCount, *numWorkers, chunkSize)
+		alertasFinal = ejecutarConcurrente(data, idx, detalleCount, minuteCount, fantCount, *numWorkers, chunkSize)
 		elapsed := time.Since(start).Seconds()
 		tiempos = append(tiempos, elapsed)
 		fmt.Printf("Ejecución %d: %.6f segundos\n", i, elapsed)
@@ -137,7 +145,7 @@ func main() {
 func ejecutarConcurrente(
 	data [][]string,
 	idx map[string]int,
-	detalleCount, fantCount map[string]int,
+	detalleCount, minuteCount, fantCount map[string]int,
 	numWorkers, chunkSize int,
 ) int {
 	mutex.Lock()
@@ -160,20 +168,20 @@ func ejecutarConcurrente(
 		}
 
 		wg.Add(1)
-		go worker(data[inicio:fin], idx, detalleCount, fantCount, &wg)
+		go worker(data[inicio:fin], idx, detalleCount, minuteCount, fantCount, &wg)
 	}
 
 	wg.Wait()
 	return alertasGlobal
 }
 
-// worker procesa su bloque de filas de forma independiente.
+// worker procesa su bloque de forma independiente.
 // Acumula en localAlertas sin ningún lock durante el loop.
 // Solo adquiere mutex una vez al final para sumar al global.
 func worker(
 	bloque [][]string,
 	idx map[string]int,
-	detalleCount, fantCount map[string]int,
+	detalleCount, minuteCount, fantCount map[string]int,
 	wg *sync.WaitGroup,
 ) {
 	defer wg.Done()
@@ -183,12 +191,21 @@ func worker(
 	for _, row := range bloque {
 		detalle := col(row, idx, "DETALLE_QUEJA")
 		hora    := col(row, idx, "HORA_PRESENTACION")
+		fecha   := col(row, idx, "FECHA_PRESENTACION_pres")
 
 		sospechoso := false
 
-		// Patrón 1+2 — queja duplicada y bombardeo
+		// Patrón 1 — queja duplicada
 		if detalleCount[detalle] >= 20000 {
 			sospechoso = true
+		}
+
+		// Patrón 2 — bombardeo por tiempo:
+		// >= 10 registros con misma fecha y mismo HH:MM
+		if len(hora) >= 5 && fecha != "" {
+			if minuteCount[fecha+"_"+hora[:5]] >= 10 {
+				sospechoso = true
+			}
 		}
 
 		// Patrón 3 — ráfaga nocturna

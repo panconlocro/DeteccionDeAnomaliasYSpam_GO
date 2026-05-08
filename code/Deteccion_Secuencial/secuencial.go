@@ -1,3 +1,4 @@
+// secuencial.go
 package main
 
 import (
@@ -54,16 +55,20 @@ func main() {
 	idx := buildIndex(header)
 
 	// ── Fase 1: conteos globales ─────────────────────────────────────────
-	// Se ejecuta una sola vez fuera del benchmark.
-	// detalleCount: frecuencia de cada texto exacto de queja.
-	// fantCount: frecuencia de cada denunciado fantasma.
-	detalleCount := make(map[string]int)
-	fantCount    := make(map[string]int)
+	detalleCount  := make(map[string]int)
+	minuteCount   := make(map[string]int) // clave: "FECHA_HH:MM"
+	fantCount     := make(map[string]int)
 
 	for _, row := range data {
 		detalle := col(row, idx, "DETALLE_QUEJA")
+		hora    := col(row, idx, "HORA_PRESENTACION")
+		fecha   := col(row, idx, "FECHA_PRESENTACION_pres")
+
 		if detalle != "" {
 			detalleCount[detalle]++
+		}
+		if len(hora) >= 5 && fecha != "" {
+			minuteCount[fecha+"_"+hora[:5]]++
 		}
 		for _, v := range row {
 			v = strings.TrimSpace(v)
@@ -82,7 +87,7 @@ func main() {
 
 	for i := 1; i <= *runs; i++ {
 		start := time.Now()
-		alertasFinal = procesarSecuencial(data, idx, detalleCount, fantCount)
+		alertasFinal = procesarSecuencial(data, idx, detalleCount, minuteCount, fantCount)
 		elapsed := time.Since(start).Seconds()
 		tiempos = append(tiempos, elapsed)
 		fmt.Printf("Ejecución %d: %.6f segundos\n", i, elapsed)
@@ -125,28 +130,36 @@ func main() {
 func procesarSecuencial(
 	data [][]string,
 	idx map[string]int,
-	detalleCount, fantCount map[string]int,
+	detalleCount, minuteCount, fantCount map[string]int,
 ) int {
 	alertas := 0
 
 	for _, row := range data {
 		detalle := col(row, idx, "DETALLE_QUEJA")
 		hora    := col(row, idx, "HORA_PRESENTACION")
+		fecha   := col(row, idx, "FECHA_PRESENTACION_pres")
 
 		sospechoso := false
 
-		// Patrón 1+2 — queja duplicada y bombardeo por tiempo:
-		// Los textos de spam son exactamente 3 plantillas fijas que se
-		// repiten ~23k veces c/u. Los textos normales usan plantillas
-		// distintas con un máximo de ~16k repeticiones.
-		// Umbral >= 20000 captura spam sin tocar normales.
+		// Patrón 1 — queja duplicada:
+		// Textos de spam son 3 plantillas fijas (~23k repeticiones c/u).
+		// Textos normales máximo ~16k. Umbral 20000 separa sin falsos positivos.
 		if detalleCount[detalle] >= 20000 {
 			sospechoso = true
 		}
 
+		// Patrón 2 — bombardeo por tiempo:
+		// El generador crea grupos de 10 con exactamente la misma fecha y HH:MM.
+		// Usando fecha+HH:MM como clave, los normales raramente colisionan
+		// (distribuidos en ~365 días × 720 minutos).
+		if len(hora) >= 5 && fecha != "" {
+			if minuteCount[fecha+"_"+hora[:5]] >= 10 {
+				sospechoso = true
+			}
+		}
+
 		// Patrón 3 — ráfaga nocturna:
-		// Horas 00:xx a 04:xx. Ningún registro normal tiene estas horas
-		// (el generador usa 08-17 para el 85% y 18-21 para el 15%).
+		// Horas 00:xx a 04:xx. Ningún registro normal usa este rango.
 		if len(hora) >= 2 {
 			hh := hora[:2]
 			if hh == "00" || hh == "01" || hh == "02" || hh == "03" || hh == "04" {
@@ -155,8 +168,7 @@ func procesarSecuencial(
 		}
 
 		// Patrón 4 — denunciado fantasma:
-		// El generador crea 10k empresas distintas con 3 filas cada una.
-		// Umbral >= 3 captura todos sin falsos positivos.
+		// 10k empresas distintas con 3 filas cada una. Umbral >= 3.
 		for _, v := range row {
 			v = strings.TrimSpace(v)
 			if strings.Contains(v, "EMPRESA_FANTASMA_") && fantCount[v] >= 3 {
