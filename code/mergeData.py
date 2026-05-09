@@ -134,6 +134,7 @@ for target, source in fill_map.items():
 df_merged["RES_MATCH_SOURCE"] = np.where(
     df_merged["TIPO_EXPEDIENTE_res"].notna(), "nro", "none"
 )
+# Si no hay match por nro pero sí por origen:
 has_res2 = df_merged["TIPO_EXPEDIENTE_res2"].notna()
 df_merged.loc[
     (df_merged["RES_MATCH_SOURCE"] == "none") & has_res2,

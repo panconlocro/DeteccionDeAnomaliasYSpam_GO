@@ -64,15 +64,10 @@ func (g *BaseGenerator) Generate(
 	}
 
 	return model.Complaint{
-
 		OriginalData: data,
-
 		DetalleQueja: "",
-
 		EsSpam: false,
-
 		SpamTags: []string{},
-
 		Metadata: map[string]any{},
 	}
 }
