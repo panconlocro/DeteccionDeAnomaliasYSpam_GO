@@ -290,18 +290,17 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"time"
 
-    "detecciondeanomalias/code/generateData/internal/anomly"
-    "detecciondeanomalias/code/generateData/internal/generator"
-    "detecciondeanomalias/code/generateData/internal/model"
-    "detecciondeanomalias/code/generateData/internal/sampler"
-    "detecciondeanomalias/code/generateData/internal/textgen"
-    "detecciondeanomalias/code/generateData/internal/timeline"
-    "detecciondeanomalias/code/generateData/internal/validator"
-    "detecciondeanomalias/code/generateData/internal/writer"	
-
-
+	anomaly "detecciondeanomalias/code/generateData/internal/anomly"
+	"detecciondeanomalias/code/generateData/internal/generator"
+	"detecciondeanomalias/code/generateData/internal/model"
+	"detecciondeanomalias/code/generateData/internal/sampler"
+	"detecciondeanomalias/code/generateData/internal/textgen"
+	"detecciondeanomalias/code/generateData/internal/timeline"
+	"detecciondeanomalias/code/generateData/internal/validator"
+	"detecciondeanomalias/code/generateData/internal/writer"
 )
 
 func loadCSV(
@@ -381,6 +380,21 @@ func main() {
 
 	outputCSV :=
 		"data/synthetic/expedientes_synthetic.csv"
+
+	outputDir := filepath.Dir(outputCSV)
+
+	if outputDir != "." {
+
+		err := os.MkdirAll(outputDir, 0o755)
+
+		if err != nil {
+
+			log.Fatalf(
+				"cannot create output directory: %v",
+				err,
+			)
+		}
+	}
 
 	totalRows := 1_000_000
 
@@ -619,9 +633,7 @@ func main() {
 			)
 
 		den :=
-			complaint.OriginalData[
-				"DENUNCIADOS_pres"]
-			
+			complaint.OriginalData["DENUNCIADOS_pres"]
 
 		ctx.EntityFrequency[den]++
 
