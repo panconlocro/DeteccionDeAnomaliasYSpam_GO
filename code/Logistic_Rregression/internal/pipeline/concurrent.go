@@ -1,6 +1,11 @@
 package pipeline
 
-import "detecciondeanomalias/code/Logistic_Rregression/internal/benchmark"
+import (
+	"fmt"
+	"os"
+
+	"detecciondeanomalias/code/Logistic_Rregression/internal/benchmark"
+)
 
 var concurrentSections = []string{
 	"preprocess/tokenization",
@@ -22,14 +27,17 @@ func RunConcurrent(cfg Config, workersList []int) (benchmark.Report, error) {
 
 	var last runOutput
 	for _, workers := range workersList {
+		fmt.Fprintf(os.Stderr, "[concurrent] workers=%d started\n", workers)
 		times := make([]float64, 0, cfg.Runs)
 		stages := make([]benchmark.StageTimes, 0, cfg.Runs)
 
 		for run := 0; run < cfg.Runs; run++ {
+			fmt.Fprintf(os.Stderr, "[concurrent] workers=%d run %d/%d started\n", workers, run+1, cfg.Runs)
 			out, err := runOnce(cfg, workers, true)
 			if err != nil {
 				return benchmark.Report{}, err
 			}
+			fmt.Fprintf(os.Stderr, "[concurrent] workers=%d run %d/%d finished in %.3fs\n", workers, run+1, cfg.Runs, out.StageTimes.Total)
 			last = out
 			times = append(times, out.StageTimes.Total)
 			stages = append(stages, out.StageTimes)

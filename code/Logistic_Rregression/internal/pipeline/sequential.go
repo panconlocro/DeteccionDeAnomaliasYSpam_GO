@@ -1,6 +1,9 @@
 package pipeline
 
 import (
+	"fmt"
+	"os"
+
 	"detecciondeanomalias/code/Logistic_Rregression/internal/benchmark"
 )
 
@@ -11,10 +14,12 @@ func RunSequential(cfg Config) (benchmark.Report, error) {
 
 	var last runOutput
 	for run := 0; run < cfg.Runs; run++ {
+		fmt.Fprintf(os.Stderr, "[sequential] run %d/%d started\n", run+1, cfg.Runs)
 		out, err := runOnce(cfg, 1, false)
 		if err != nil {
 			return benchmark.Report{}, err
 		}
+		fmt.Fprintf(os.Stderr, "[sequential] run %d/%d finished in %.3fs\n", run+1, cfg.Runs, out.StageTimes.Total)
 		last = out
 		times = append(times, out.StageTimes.Total)
 		stages = append(stages, out.StageTimes)

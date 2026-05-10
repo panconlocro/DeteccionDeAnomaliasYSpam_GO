@@ -30,8 +30,9 @@ func EvaluateConcurrent(m *LogisticRegression, examples []Example, workers int) 
 
 	actualWorkers := min(workers, len(examples))
 	chunkSize := (len(examples) + actualWorkers - 1) / actualWorkers
-	partials := make([]Metrics, actualWorkers)
 
+	var out Metrics
+	var mu sync.Mutex
 	var wg sync.WaitGroup
 	for worker := 0; worker < actualWorkers; worker++ {
 		start := worker * chunkSize
@@ -48,19 +49,17 @@ func EvaluateConcurrent(m *LogisticRegression, examples []Example, workers int) 
 			for i := start; i < end; i++ {
 				local.Add(examples[i].Y, m.Predict(examples[i].X))
 			}
-			partials[worker] = local
+
+			mu.Lock()
+			out.TP += local.TP
+			out.TN += local.TN
+			out.FP += local.FP
+			out.FN += local.FN
+			mu.Unlock()
 		}(worker, start, end)
 	}
 
 	wg.Wait()
-
-	var out Metrics
-	for _, partial := range partials {
-		out.TP += partial.TP
-		out.TN += partial.TN
-		out.FP += partial.FP
-		out.FN += partial.FN
-	}
 
 	return out.Finalize()
 }
