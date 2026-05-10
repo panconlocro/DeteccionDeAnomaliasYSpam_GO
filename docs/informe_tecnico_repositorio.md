@@ -39,7 +39,6 @@ La separación `cmd/` (punto de entrada) + `internal/` (lógica de dominio) es u
 | `text/tokenizer.go` | Bueno: normalización eficiente usando `strings.Builder` y `strings.NewReplacer` (optimizado por Go) |
 | `generateData/cmd/main.go` | Regular: toda la orquestación en `main()` con configuración hardcodeada, sin flags CLI |
 
-Después de que el autor eliminó el código comentado, la legibilidad mejoró notablemente. No quedan bloques de código muerto en la rama principal.
 
 ### 1.3 Buenas prácticas en Go
 
