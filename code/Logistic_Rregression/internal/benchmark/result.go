@@ -26,14 +26,18 @@ type StageTimes struct {
 }
 
 type WorkerResult struct {
-	Workers            int           `json:"workers"`
-	TimesSeconds       []float64     `json:"times_seconds"`
-	AvgSeconds         float64       `json:"avg_seconds"`
-	TrimmedMeanSeconds float64       `json:"trimmed_mean_seconds"`
-	Metrics            model.Metrics `json:"metrics"`
-	StageTimes         StageTimes    `json:"stage_times"`
-	SplitMethod        string        `json:"split_method"`
-	ConcurrentSections []string      `json:"concurrent_sections,omitempty"`
+	Workers                 int           `json:"workers"`
+	TimesSeconds            []float64     `json:"times_seconds"`
+	TotalTimesSeconds       []float64     `json:"total_times_seconds"`
+	ReadCSVSeconds          []float64     `json:"read_csv_seconds"`
+	AvgSeconds              float64       `json:"avg_seconds"`
+	TrimmedMeanSeconds      float64       `json:"trimmed_mean_seconds"`
+	AvgTotalSeconds         float64       `json:"avg_total_seconds"`
+	TrimmedMeanTotalSeconds float64       `json:"trimmed_mean_total_seconds"`
+	Metrics                 model.Metrics `json:"metrics"`
+	StageTimes              StageTimes    `json:"stage_times"`
+	SplitMethod             string        `json:"split_method"`
+	ConcurrentSections      []string      `json:"concurrent_sections,omitempty"`
 }
 
 type Report struct {

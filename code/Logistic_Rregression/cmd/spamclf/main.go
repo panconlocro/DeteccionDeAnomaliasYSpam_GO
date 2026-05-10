@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"detecciondeanomalias/code/Logistic_Rregression/internal/benchmark"
 	"detecciondeanomalias/code/Logistic_Rregression/internal/pipeline"
 )
 
@@ -71,6 +72,14 @@ func main() {
 	if err := writeJSON(*out, payload); err != nil {
 		exitErr(err)
 	}
+
+	if strings.TrimSpace(*out) != "" {
+		summaryPath := runSummaryPath(*out)
+		if err := writeRunSummary(summaryPath, payload); err != nil {
+			exitErr(err)
+		}
+		fmt.Fprintf(os.Stderr, "Resumen de ejecuciones escrito en %s\n", summaryPath)
+	}
 }
 
 func parseWorkers(value string) ([]int, error) {
@@ -128,6 +137,88 @@ func writeJSON(path string, payload any) error {
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(payload)
+}
+
+func runSummaryPath(jsonPath string) string {
+	ext := filepath.Ext(jsonPath)
+	if ext == "" {
+		return jsonPath + "_runs.txt"
+	}
+	return strings.TrimSuffix(jsonPath, ext) + "_runs.txt"
+}
+
+func writeRunSummary(path string, payload any) error {
+	dir := filepath.Dir(path)
+	if dir != "." {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return err
+		}
+	}
+
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	switch report := payload.(type) {
+	case benchmark.Report:
+		writeReportSummary(file, report)
+	case benchmark.CompareReport:
+		fmt.Fprintln(file, "REPORTE COMPARATIVO")
+		fmt.Fprintln(file, strings.Repeat("=", 72))
+		writeReportSummary(file, report.Sequential)
+		fmt.Fprintln(file)
+		writeReportSummary(file, report.Concurrent)
+	default:
+		return fmt.Errorf("tipo de reporte no soportado para resumen")
+	}
+
+	return nil
+}
+
+func writeReportSummary(file *os.File, report benchmark.Report) {
+	fmt.Fprintf(file, "MODO: %s\n", strings.ToUpper(report.Mode))
+	fmt.Fprintf(file, "Filas dataset: %d\n", report.DatasetRows)
+	fmt.Fprintf(file, "Filas train: %d\n", report.TrainRows)
+	fmt.Fprintf(file, "Filas test: %d\n", report.TestRows)
+	fmt.Fprintf(file, "Runs: %d\n", report.Runs)
+	if report.BestWorkersByTrimmedMean > 0 {
+		fmt.Fprintf(file, "Mejor workers por media recortada sin lectura CSV: %d\n", report.BestWorkersByTrimmedMean)
+	}
+	fmt.Fprintln(file, strings.Repeat("-", 72))
+
+	for _, result := range report.ResultsByWorkers {
+		if report.Mode == "sequential" {
+			fmt.Fprintln(file, "Configuracion: secuencial")
+		} else {
+			fmt.Fprintf(file, "Configuracion: workers=%d\n", result.Workers)
+		}
+
+		for i, seconds := range result.TimesSeconds {
+			fmt.Fprintf(file, "Ejecucion %d: %.6f segundos (sin lectura CSV)\n", i+1, seconds)
+		}
+
+		alertsGenerated := result.Metrics.TP + result.Metrics.FP
+		fmt.Fprintf(file, "Alertas generadas por el modelo (TP+FP): %d\n", alertsGenerated)
+		fmt.Fprintf(file, "Alertas detectadas correctamente (TP): %d\n", result.Metrics.TP)
+		fmt.Fprintf(file, "Alertas no detectadas (FN): %d\n", result.Metrics.FN)
+		fmt.Fprintf(file, "Falsas alertas (FP): %d\n", result.Metrics.FP)
+		fmt.Fprintf(file, "Tiempo lectura CSV promedio: %.6f segundos\n", result.StageTimes.ReadCSV)
+		fmt.Fprintf(file, "Promedio de los stages sin lectura CSV: %.6f segundos\n", result.AvgSeconds)
+		fmt.Fprintf(file, "Media recortada de los stages sin lectura CSV: %.6f segundos\n", result.TrimmedMeanSeconds)
+		fmt.Fprintf(file, "Tiempo total promedio con lectura CSV: %.6f segundos\n", result.AvgTotalSeconds)
+		fmt.Fprintf(file, "Media recortada total con lectura CSV: %.6f segundos\n", result.TrimmedMeanTotalSeconds)
+		fmt.Fprintln(file, "Detalle promedio por stage:")
+		fmt.Fprintf(file, "  read_csv: %.6f\n", result.StageTimes.ReadCSV)
+		fmt.Fprintf(file, "  preprocess: %.6f\n", result.StageTimes.Preprocess)
+		fmt.Fprintf(file, "  vocabulary: %.6f\n", result.StageTimes.Vocabulary)
+		fmt.Fprintf(file, "  vectorization: %.6f\n", result.StageTimes.Vectorization)
+		fmt.Fprintf(file, "  training: %.6f\n", result.StageTimes.Training)
+		fmt.Fprintf(file, "  evaluation: %.6f\n", result.StageTimes.Evaluation)
+		fmt.Fprintf(file, "  total: %.6f\n", result.StageTimes.Total)
+		fmt.Fprintln(file, strings.Repeat("-", 72))
+	}
 }
 
 func exitErr(err error) {

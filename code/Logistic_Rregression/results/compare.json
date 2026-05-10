@@ -1,0 +1,974 @@
+{
+  "mode": "compare",
+  "sequential": {
+    "mode": "sequential",
+    "dataset_rows": 969115,
+    "train_rows": 775292,
+    "test_rows": 193823,
+    "runs": 5,
+    "config": {
+      "epochs": 10,
+      "learning_rate": 0.05,
+      "lambda_l2": 0.001,
+      "batch_size": 1024,
+      "max_features": 5000,
+      "min_df": 2,
+      "threshold": 0.5,
+      "seed": 42,
+      "use_bigrams": true,
+      "test_ratio": 0.2
+    },
+    "results_by_workers": [
+      {
+        "workers": 1,
+        "times_seconds": [
+          14.892011042,
+          14.977937958,
+          14.923275542,
+          15.05507125,
+          14.985888167
+        ],
+        "total_times_seconds": [
+          15.50011325,
+          15.650301083,
+          15.490440333,
+          15.658256792,
+          15.568694042
+        ],
+        "read_csv_seconds": [
+          0.608102208,
+          0.672363125,
+          0.567164791,
+          0.603185542,
+          0.582805875
+        ],
+        "avg_seconds": 14.9668367918,
+        "trimmed_mean_seconds": 14.962367222333334,
+        "avg_total_seconds": 15.573561100000001,
+        "trimmed_mean_total_seconds": 15.573036125000002,
+        "metrics": {
+          "accuracy": 0.8727498800451958,
+          "precision": 0.7665189363416599,
+          "recall": 0.43179754879709487,
+          "f1": 0.5524099883855982,
+          "tp": 15220,
+          "tn": 153939,
+          "fp": 4636,
+          "fn": 20028
+        },
+        "stage_times": {
+          "read_csv": 0.6067243082,
+          "preprocess": 2.0751153334000003,
+          "vocabulary": 3.6715547582,
+          "vectorization": 6.747398025200001,
+          "training": 1.3288234580000002,
+          "evaluation": 0.022083450000000004,
+          "total": 15.573561100000001
+        },
+        "split_method": "temporal"
+      }
+    ]
+  },
+  "concurrent": {
+    "mode": "concurrent",
+    "dataset_rows": 969115,
+    "train_rows": 775292,
+    "test_rows": 193823,
+    "runs": 5,
+    "config": {
+      "epochs": 10,
+      "learning_rate": 0.05,
+      "lambda_l2": 0.001,
+      "batch_size": 1024,
+      "max_features": 5000,
+      "min_df": 2,
+      "threshold": 0.5,
+      "seed": 42,
+      "use_bigrams": true,
+      "test_ratio": 0.2
+    },
+    "results_by_workers": [
+      {
+        "workers": 1,
+        "times_seconds": [
+          17.404285626,
+          17.669914583,
+          17.4301585,
+          17.567277959000002,
+          17.421680375
+        ],
+        "total_times_seconds": [
+          18.081996709,
+          18.260543708,
+          18.071667708,
+          18.279603584,
+          18.111323959
+        ],
+        "read_csv_seconds": [
+          0.677711083,
+          0.590629125,
+          0.641509208,
+          0.712325625,
+          0.689643584
+        ],
+        "avg_seconds": 17.4986634086,
+        "trimmed_mean_seconds": 17.473038944666666,
+        "avg_total_seconds": 18.161027133599998,
+        "trimmed_mean_total_seconds": 18.151288125333334,
+        "metrics": {
+          "accuracy": 0.8727498800451958,
+          "precision": 0.7665189363416599,
+          "recall": 0.43179754879709487,
+          "f1": 0.5524099883855982,
+          "tp": 15220,
+          "tn": 153939,
+          "fp": 4636,
+          "fn": 20028
+        },
+        "stage_times": {
+          "read_csv": 0.6623637250000001,
+          "preprocess": 2.8387655498,
+          "vocabulary": 3.6222059166000005,
+          "vectorization": 8.5705904832,
+          "training": 1.3393448416000002,
+          "evaluation": 0.022270350199999997,
+          "total": 18.161027133599998
+        },
+        "split_method": "temporal",
+        "concurrent_sections": [
+          "preprocess/tokenization",
+          "document-frequency local maps + merge",
+          "tf-idf vectorization",
+          "mini-batch gradient calculation + reduce",
+          "evaluation/prediction"
+        ]
+      },
+      {
+        "workers": 2,
+        "times_seconds": [
+          11.738052208000001,
+          11.733219834,
+          11.831475792,
+          11.853220708,
+          11.837766625
+        ],
+        "total_times_seconds": [
+          12.438795833,
+          12.29184675,
+          12.390585333,
+          12.43460275,
+          12.411659125
+        ],
+        "read_csv_seconds": [
+          0.700743625,
+          0.558626916,
+          0.559109541,
+          0.581382042,
+          0.5738925
+        ],
+        "avg_seconds": 11.798747033400002,
+        "trimmed_mean_seconds": 11.80243154166667,
+        "avg_total_seconds": 12.393497958199998,
+        "trimmed_mean_total_seconds": 12.412282402666667,
+        "metrics": {
+          "accuracy": 0.8727498800451958,
+          "precision": 0.7665189363416599,
+          "recall": 0.43179754879709487,
+          "f1": 0.5524099883855982,
+          "tp": 15220,
+          "tn": 153939,
+          "fp": 4636,
+          "fn": 20028
+        },
+        "stage_times": {
+          "read_csv": 0.5947509248,
+          "preprocess": 1.9197555170000002,
+          "vocabulary": 2.093759775,
+          "vectorization": 5.7771615414,
+          "training": 0.9017248834,
+          "evaluation": 0.0146009916,
+          "total": 12.3934979582
+        },
+        "split_method": "temporal",
+        "concurrent_sections": [
+          "preprocess/tokenization",
+          "document-frequency local maps + merge",
+          "tf-idf vectorization",
+          "mini-batch gradient calculation + reduce",
+          "evaluation/prediction"
+        ]
+      },
+      {
+        "workers": 3,
+        "times_seconds": [
+          9.043640125,
+          9.033061124,
+          9.048679374999999,
+          9.018818165999999,
+          9.180173998999999
+        ],
+        "total_times_seconds": [
+          9.5861125,
+          9.625676666,
+          9.594002084,
+          9.691595708,
+          9.713547958
+        ],
+        "read_csv_seconds": [
+          0.542472375,
+          0.592615542,
+          0.545322709,
+          0.672777542,
+          0.533373959
+        ],
+        "avg_seconds": 9.0648745578,
+        "trimmed_mean_seconds": 9.041793541333332,
+        "avg_total_seconds": 9.6421869832,
+        "trimmed_mean_total_seconds": 9.637091486000001,
+        "metrics": {
+          "accuracy": 0.8727498800451958,
+          "precision": 0.7665189363416599,
+          "recall": 0.43179754879709487,
+          "f1": 0.5524099883855982,
+          "tp": 15220,
+          "tn": 153939,
+          "fp": 4636,
+          "fn": 20028
+        },
+        "stage_times": {
+          "read_csv": 0.5773124254,
+          "preprocess": 1.5056584502,
+          "vocabulary": 1.5683345166,
+          "vectorization": 4.077328283399999,
+          "training": 0.8104374168,
+          "evaluation": 0.010204391600000001,
+          "total": 9.6421869832
+        },
+        "split_method": "temporal",
+        "concurrent_sections": [
+          "preprocess/tokenization",
+          "document-frequency local maps + merge",
+          "tf-idf vectorization",
+          "mini-batch gradient calculation + reduce",
+          "evaluation/prediction"
+        ]
+      },
+      {
+        "workers": 4,
+        "times_seconds": [
+          8.138012501,
+          8.031412417,
+          8.042868334,
+          7.928550958000001,
+          7.9853996259999995
+        ],
+        "total_times_seconds": [
+          8.707993542,
+          8.567493209,
+          8.592695584,
+          8.50119175,
+          8.573072042
+        ],
+        "read_csv_seconds": [
+          0.569981041,
+          0.536080792,
+          0.54982725,
+          0.572640792,
+          0.587672416
+        ],
+        "avg_seconds": 8.0252487672,
+        "trimmed_mean_seconds": 8.019893459,
+        "avg_total_seconds": 8.5884892254,
+        "trimmed_mean_total_seconds": 8.577753611666665,
+        "metrics": {
+          "accuracy": 0.8727498800451958,
+          "precision": 0.7665189363416599,
+          "recall": 0.43179754879709487,
+          "f1": 0.5524099883855982,
+          "tp": 15220,
+          "tn": 153939,
+          "fp": 4636,
+          "fn": 20028
+        },
+        "stage_times": {
+          "read_csv": 0.5632404582,
+          "preprocess": 1.2735718083999998,
+          "vocabulary": 1.3255513664,
+          "vectorization": 3.5378345998,
+          "training": 0.758987817,
+          "evaluation": 0.0080660998,
+          "total": 8.588489225400002
+        },
+        "split_method": "temporal",
+        "concurrent_sections": [
+          "preprocess/tokenization",
+          "document-frequency local maps + merge",
+          "tf-idf vectorization",
+          "mini-batch gradient calculation + reduce",
+          "evaluation/prediction"
+        ]
+      },
+      {
+        "workers": 5,
+        "times_seconds": [
+          7.207311583999999,
+          7.139683959,
+          7.17797275,
+          7.2099030410000005,
+          7.044070292
+        ],
+        "total_times_seconds": [
+          7.785773792,
+          7.691672292,
+          7.749651333,
+          7.8013734580000005,
+          7.584188459
+        ],
+        "read_csv_seconds": [
+          0.578462208,
+          0.551988333,
+          0.571678583,
+          0.591470417,
+          0.540118167
+        ],
+        "avg_seconds": 7.1557883252,
+        "trimmed_mean_seconds": 7.174989431,
+        "avg_total_seconds": 7.7225318668,
+        "trimmed_mean_total_seconds": 7.742365805666666,
+        "metrics": {
+          "accuracy": 0.8727498800451958,
+          "precision": 0.7665189363416599,
+          "recall": 0.43179754879709487,
+          "f1": 0.5524099883855982,
+          "tp": 15220,
+          "tn": 153939,
+          "fp": 4636,
+          "fn": 20028
+        },
+        "stage_times": {
+          "read_csv": 0.5667435416000001,
+          "preprocess": 1.1212353002000002,
+          "vocabulary": 1.1546186248,
+          "vectorization": 2.9657909250000003,
+          "training": 0.7573041418000002,
+          "evaluation": 0.006929375000000001,
+          "total": 7.722531866800001
+        },
+        "split_method": "temporal",
+        "concurrent_sections": [
+          "preprocess/tokenization",
+          "document-frequency local maps + merge",
+          "tf-idf vectorization",
+          "mini-batch gradient calculation + reduce",
+          "evaluation/prediction"
+        ]
+      },
+      {
+        "workers": 6,
+        "times_seconds": [
+          6.527665667000001,
+          6.71044075,
+          6.5949596669999995,
+          6.632471583,
+          6.686433
+        ],
+        "total_times_seconds": [
+          7.074340667,
+          7.2759497920000005,
+          7.193873,
+          7.213177,
+          7.240186708
+        ],
+        "read_csv_seconds": [
+          0.546675,
+          0.565509042,
+          0.598913333,
+          0.580705417,
+          0.553753708
+        ],
+        "avg_seconds": 6.6303941334,
+        "trimmed_mean_seconds": 6.63795475,
+        "avg_total_seconds": 7.199505433400001,
+        "trimmed_mean_total_seconds": 7.215745569333333,
+        "metrics": {
+          "accuracy": 0.8727498800451958,
+          "precision": 0.7665189363416599,
+          "recall": 0.43179754879709487,
+          "f1": 0.5524099883855982,
+          "tp": 15220,
+          "tn": 153939,
+          "fp": 4636,
+          "fn": 20028
+        },
+        "stage_times": {
+          "read_csv": 0.5691113,
+          "preprocess": 1.0004077086,
+          "vocabulary": 1.0644845334,
+          "vectorization": 2.6085072920000005,
+          "training": 0.8158371750000001,
+          "evaluation": 0.006640825,
+          "total": 7.199505433400001
+        },
+        "split_method": "temporal",
+        "concurrent_sections": [
+          "preprocess/tokenization",
+          "document-frequency local maps + merge",
+          "tf-idf vectorization",
+          "mini-batch gradient calculation + reduce",
+          "evaluation/prediction"
+        ]
+      },
+      {
+        "workers": 7,
+        "times_seconds": [
+          6.2789157079999995,
+          6.289629584,
+          6.230564541,
+          6.497514875,
+          6.332937958
+        ],
+        "total_times_seconds": [
+          6.853562541,
+          6.873006417,
+          6.808808708,
+          7.086521083,
+          6.898454875
+        ],
+        "read_csv_seconds": [
+          0.574646833,
+          0.583376833,
+          0.578244167,
+          0.589006208,
+          0.565516917
+        ],
+        "avg_seconds": 6.3259125331999995,
+        "trimmed_mean_seconds": 6.300494416666666,
+        "avg_total_seconds": 6.9040707248,
+        "trimmed_mean_total_seconds": 6.875007944333333,
+        "metrics": {
+          "accuracy": 0.8727498800451958,
+          "precision": 0.7665189363416599,
+          "recall": 0.43179754879709487,
+          "f1": 0.5524099883855982,
+          "tp": 15220,
+          "tn": 153939,
+          "fp": 4636,
+          "fn": 20028
+        },
+        "stage_times": {
+          "read_csv": 0.5781581916,
+          "preprocess": 0.9382469168,
+          "vocabulary": 1.0686560832,
+          "vectorization": 2.4321061584,
+          "training": 0.7866985916000001,
+          "evaluation": 0.0055741665999999995,
+          "total": 6.9040707248
+        },
+        "split_method": "temporal",
+        "concurrent_sections": [
+          "preprocess/tokenization",
+          "document-frequency local maps + merge",
+          "tf-idf vectorization",
+          "mini-batch gradient calculation + reduce",
+          "evaluation/prediction"
+        ]
+      },
+      {
+        "workers": 8,
+        "times_seconds": [
+          6.414912707999999,
+          6.154488458,
+          6.167037376000001,
+          6.399430875,
+          6.264656084
+        ],
+        "total_times_seconds": [
+          6.975719375,
+          6.787331208,
+          6.8215267090000005,
+          7.044470541,
+          6.88144425
+        ],
+        "read_csv_seconds": [
+          0.560806667,
+          0.63284275,
+          0.654489333,
+          0.645039666,
+          0.616788166
+        ],
+        "avg_seconds": 6.280105100199999,
+        "trimmed_mean_seconds": 6.277041445000001,
+        "avg_total_seconds": 6.9020984165999995,
+        "trimmed_mean_total_seconds": 6.892896778000001,
+        "metrics": {
+          "accuracy": 0.8727498800451958,
+          "precision": 0.7665189363416599,
+          "recall": 0.43179754879709487,
+          "f1": 0.5524099883855982,
+          "tp": 15220,
+          "tn": 153939,
+          "fp": 4636,
+          "fn": 20028
+        },
+        "stage_times": {
+          "read_csv": 0.6219933164000001,
+          "preprocess": 0.8874758666,
+          "vocabulary": 1.0722676833999998,
+          "vectorization": 2.3847885168,
+          "training": 0.8306676084000002,
+          "evaluation": 0.005619850000000001,
+          "total": 6.9020984165999995
+        },
+        "split_method": "temporal",
+        "concurrent_sections": [
+          "preprocess/tokenization",
+          "document-frequency local maps + merge",
+          "tf-idf vectorization",
+          "mini-batch gradient calculation + reduce",
+          "evaluation/prediction"
+        ]
+      },
+      {
+        "workers": 8,
+        "times_seconds": [
+          6.213909374,
+          6.110463167,
+          6.115005083,
+          6.182170041,
+          6.187058249000001
+        ],
+        "total_times_seconds": [
+          6.751225458,
+          6.703883542,
+          6.655407083,
+          6.7559445,
+          6.769948708
+        ],
+        "read_csv_seconds": [
+          0.537316084,
+          0.593420375,
+          0.540402,
+          0.573774459,
+          0.582890459
+        ],
+        "avg_seconds": 6.161721182799999,
+        "trimmed_mean_seconds": 6.161411124333333,
+        "avg_total_seconds": 6.7272818582,
+        "trimmed_mean_total_seconds": 6.737017833333333,
+        "metrics": {
+          "accuracy": 0.8727498800451958,
+          "precision": 0.7665189363416599,
+          "recall": 0.43179754879709487,
+          "f1": 0.5524099883855982,
+          "tp": 15220,
+          "tn": 153939,
+          "fp": 4636,
+          "fn": 20028
+        },
+        "stage_times": {
+          "read_csv": 0.5655606754,
+          "preprocess": 0.8963530833999999,
+          "vocabulary": 1.0474199418,
+          "vectorization": 2.3014750916,
+          "training": 0.8022495084000001,
+          "evaluation": 0.005539608200000001,
+          "total": 6.7272818582000005
+        },
+        "split_method": "temporal",
+        "concurrent_sections": [
+          "preprocess/tokenization",
+          "document-frequency local maps + merge",
+          "tf-idf vectorization",
+          "mini-batch gradient calculation + reduce",
+          "evaluation/prediction"
+        ]
+      },
+      {
+        "workers": 10,
+        "times_seconds": [
+          6.055268956999999,
+          6.072978125000001,
+          6.094949124,
+          6.117803251,
+          6.127637374
+        ],
+        "total_times_seconds": [
+          6.7013859159999996,
+          6.659282958,
+          6.685261916,
+          6.676744167,
+          6.693701083
+        ],
+        "read_csv_seconds": [
+          0.646116959,
+          0.586304833,
+          0.590312792,
+          0.558940916,
+          0.566063709
+        ],
+        "avg_seconds": 6.0937273662,
+        "trimmed_mean_seconds": 6.0952435,
+        "avg_total_seconds": 6.6832752079999995,
+        "trimmed_mean_total_seconds": 6.685235722000001,
+        "metrics": {
+          "accuracy": 0.8727498800451958,
+          "precision": 0.7665189363416599,
+          "recall": 0.43179754879709487,
+          "f1": 0.5524099883855982,
+          "tp": 15220,
+          "tn": 153939,
+          "fp": 4636,
+          "fn": 20028
+        },
+        "stage_times": {
+          "read_csv": 0.5895478418,
+          "preprocess": 0.8676281498,
+          "vocabulary": 1.0325129746000001,
+          "vectorization": 2.2187191916,
+          "training": 0.8756256581999999,
+          "evaluation": 0.005085650000000001,
+          "total": 6.6832752079999995
+        },
+        "split_method": "temporal",
+        "concurrent_sections": [
+          "preprocess/tokenization",
+          "document-frequency local maps + merge",
+          "tf-idf vectorization",
+          "mini-batch gradient calculation + reduce",
+          "evaluation/prediction"
+        ]
+      },
+      {
+        "workers": 11,
+        "times_seconds": [
+          6.133210416,
+          6.374234333,
+          6.254880667,
+          6.261718043,
+          6.308377416
+        ],
+        "total_times_seconds": [
+          6.717661625,
+          6.943596708,
+          6.824301125,
+          6.869503459,
+          6.875932166
+        ],
+        "read_csv_seconds": [
+          0.584451209,
+          0.569362375,
+          0.569420458,
+          0.607785416,
+          0.56755475
+        ],
+        "avg_seconds": 6.266484175,
+        "trimmed_mean_seconds": 6.274992042,
+        "avg_total_seconds": 6.846199016599999,
+        "trimmed_mean_total_seconds": 6.856578916666666,
+        "metrics": {
+          "accuracy": 0.8727498800451958,
+          "precision": 0.7665189363416599,
+          "recall": 0.43179754879709487,
+          "f1": 0.5524099883855982,
+          "tp": 15220,
+          "tn": 153939,
+          "fp": 4636,
+          "fn": 20028
+        },
+        "stage_times": {
+          "read_csv": 0.5797148416000001,
+          "preprocess": 0.8861893918,
+          "vocabulary": 1.083773058,
+          "vectorization": 2.2833237580000003,
+          "training": 0.8958434752000001,
+          "evaluation": 0.0049683748,
+          "total": 6.8461990166
+        },
+        "split_method": "temporal",
+        "concurrent_sections": [
+          "preprocess/tokenization",
+          "document-frequency local maps + merge",
+          "tf-idf vectorization",
+          "mini-batch gradient calculation + reduce",
+          "evaluation/prediction"
+        ]
+      },
+      {
+        "workers": 12,
+        "times_seconds": [
+          6.1837216249999996,
+          6.160353833,
+          6.304956542,
+          6.212591875,
+          6.122768667
+        ],
+        "total_times_seconds": [
+          6.761837333,
+          6.710025042,
+          6.89017075,
+          6.772900625,
+          6.734036292
+        ],
+        "read_csv_seconds": [
+          0.578115708,
+          0.549671209,
+          0.585214208,
+          0.56030875,
+          0.611267625
+        ],
+        "avg_seconds": 6.196878508399999,
+        "trimmed_mean_seconds": 6.185555777666667,
+        "avg_total_seconds": 6.7737940084,
+        "trimmed_mean_total_seconds": 6.756258083333333,
+        "metrics": {
+          "accuracy": 0.8727498800451958,
+          "precision": 0.7665189363416599,
+          "recall": 0.43179754879709487,
+          "f1": 0.5524099883855982,
+          "tp": 15220,
+          "tn": 153939,
+          "fp": 4636,
+          "fn": 20028
+        },
+        "stage_times": {
+          "read_csv": 0.5769155,
+          "preprocess": 0.8610529165999999,
+          "vocabulary": 1.1154865834000003,
+          "vectorization": 2.173809692,
+          "training": 0.8972229832,
+          "evaluation": 0.0047329498000000005,
+          "total": 6.7737940084
+        },
+        "split_method": "temporal",
+        "concurrent_sections": [
+          "preprocess/tokenization",
+          "document-frequency local maps + merge",
+          "tf-idf vectorization",
+          "mini-batch gradient calculation + reduce",
+          "evaluation/prediction"
+        ]
+      },
+      {
+        "workers": 13,
+        "times_seconds": [
+          6.104636625,
+          6.152090458,
+          6.0549535,
+          6.207087167,
+          6.336705208
+        ],
+        "total_times_seconds": [
+          6.662254334,
+          6.715861416,
+          6.647400208,
+          6.751665292,
+          6.897889416
+        ],
+        "read_csv_seconds": [
+          0.557617709,
+          0.563770958,
+          0.592446708,
+          0.544578125,
+          0.561184208
+        ],
+        "avg_seconds": 6.1710945916,
+        "trimmed_mean_seconds": 6.154604750000001,
+        "avg_total_seconds": 6.735014133199999,
+        "trimmed_mean_total_seconds": 6.709927013999999,
+        "metrics": {
+          "accuracy": 0.8727498800451958,
+          "precision": 0.7665189363416599,
+          "recall": 0.43179754879709487,
+          "f1": 0.5524099883855982,
+          "tp": 15220,
+          "tn": 153939,
+          "fp": 4636,
+          "fn": 20028
+        },
+        "stage_times": {
+          "read_csv": 0.5639195416,
+          "preprocess": 0.8781200415999999,
+          "vocabulary": 1.0813166166000001,
+          "vectorization": 2.1413690664000002,
+          "training": 0.9284826667999999,
+          "evaluation": 0.0050906250000000005,
+          "total": 6.7350141332
+        },
+        "split_method": "temporal",
+        "concurrent_sections": [
+          "preprocess/tokenization",
+          "document-frequency local maps + merge",
+          "tf-idf vectorization",
+          "mini-batch gradient calculation + reduce",
+          "evaluation/prediction"
+        ]
+      },
+      {
+        "workers": 14,
+        "times_seconds": [
+          6.0978305839999996,
+          6.201629084,
+          6.258292833,
+          6.129444083,
+          6.040301541
+        ],
+        "total_times_seconds": [
+          6.676990042,
+          6.772007542,
+          6.844737875,
+          6.726342125,
+          6.61155575
+        ],
+        "read_csv_seconds": [
+          0.579159458,
+          0.570378458,
+          0.586445042,
+          0.596898042,
+          0.571254209
+        ],
+        "avg_seconds": 6.145499624999999,
+        "trimmed_mean_seconds": 6.142967917,
+        "avg_total_seconds": 6.7263266668,
+        "trimmed_mean_total_seconds": 6.725113236333333,
+        "metrics": {
+          "accuracy": 0.8727498800451958,
+          "precision": 0.7665189363416599,
+          "recall": 0.43179754879709487,
+          "f1": 0.5524099883855982,
+          "tp": 15220,
+          "tn": 153939,
+          "fp": 4636,
+          "fn": 20028
+        },
+        "stage_times": {
+          "read_csv": 0.5808270418,
+          "preprocess": 0.8821848083999999,
+          "vocabulary": 1.1066762836000001,
+          "vectorization": 2.0798099248,
+          "training": 0.9464680752,
+          "evaluation": 0.005165958000000001,
+          "total": 6.7263266668
+        },
+        "split_method": "temporal",
+        "concurrent_sections": [
+          "preprocess/tokenization",
+          "document-frequency local maps + merge",
+          "tf-idf vectorization",
+          "mini-batch gradient calculation + reduce",
+          "evaluation/prediction"
+        ]
+      },
+      {
+        "workers": 15,
+        "times_seconds": [
+          6.067581,
+          6.2624105409999995,
+          6.183035791,
+          6.148312958,
+          6.093073042
+        ],
+        "total_times_seconds": [
+          6.639803375,
+          6.865985791,
+          6.73279125,
+          6.737929708,
+          6.676045167
+        ],
+        "read_csv_seconds": [
+          0.572222375,
+          0.60357525,
+          0.549755459,
+          0.58961675,
+          0.582972125
+        ],
+        "avg_seconds": 6.150882666399999,
+        "trimmed_mean_seconds": 6.141473930333333,
+        "avg_total_seconds": 6.730511058199999,
+        "trimmed_mean_total_seconds": 6.715588708333333,
+        "metrics": {
+          "accuracy": 0.8727498800451958,
+          "precision": 0.7665189363416599,
+          "recall": 0.43179754879709487,
+          "f1": 0.5524099883855982,
+          "tp": 15220,
+          "tn": 153939,
+          "fp": 4636,
+          "fn": 20028
+        },
+        "stage_times": {
+          "read_csv": 0.5796283917999999,
+          "preprocess": 0.8651738918000001,
+          "vocabulary": 1.1206265831999997,
+          "vectorization": 2.0587577,
+          "training": 0.9570842254,
+          "evaluation": 0.005245725,
+          "total": 6.7305110582
+        },
+        "split_method": "temporal",
+        "concurrent_sections": [
+          "preprocess/tokenization",
+          "document-frequency local maps + merge",
+          "tf-idf vectorization",
+          "mini-batch gradient calculation + reduce",
+          "evaluation/prediction"
+        ]
+      },
+      {
+        "workers": 16,
+        "times_seconds": [
+          6.0869525,
+          6.174791542,
+          6.210637376,
+          6.114092333,
+          6.055923708
+        ],
+        "total_times_seconds": [
+          6.6588505,
+          6.766250792,
+          6.784777709,
+          6.737461416,
+          6.629437375
+        ],
+        "read_csv_seconds": [
+          0.571898,
+          0.59145925,
+          0.574140333,
+          0.623369083,
+          0.573513667
+        ],
+        "avg_seconds": 6.1284794918,
+        "trimmed_mean_seconds": 6.125278791666667,
+        "avg_total_seconds": 6.715355558400001,
+        "trimmed_mean_total_seconds": 6.720854236,
+        "metrics": {
+          "accuracy": 0.8727498800451958,
+          "precision": 0.7665189363416599,
+          "recall": 0.43179754879709487,
+          "f1": 0.5524099883855982,
+          "tp": 15220,
+          "tn": 153939,
+          "fp": 4636,
+          "fn": 20028
+        },
+        "stage_times": {
+          "read_csv": 0.5868760666,
+          "preprocess": 0.8624723334000001,
+          "vocabulary": 1.0833857500000001,
+          "vectorization": 2.0845798168,
+          "training": 0.9762100588000001,
+          "evaluation": 0.0050971,
+          "total": 6.715355558400001
+        },
+        "split_method": "temporal",
+        "concurrent_sections": [
+          "preprocess/tokenization",
+          "document-frequency local maps + merge",
+          "tf-idf vectorization",
+          "mini-batch gradient calculation + reduce",
+          "evaluation/prediction"
+        ]
+      }
+    ],
+    "best_workers_by_trimmed_mean": 10
+  }
+}

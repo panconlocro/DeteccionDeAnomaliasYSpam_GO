@@ -109,6 +109,17 @@ Cada run mide:
 
 El JSON reporta los tiempos por run, promedio y media recortada. La media recortada elimina el menor y mayor tiempo cuando hay mas de dos runs.
 
+En `times_seconds`, `avg_seconds` y `trimmed_mean_seconds` no se incluye la lectura del CSV. Esto permite comparar mejor el efecto de la concurrencia sobre las fases paralelizables. El tiempo total con lectura incluida se conserva en `total_times_seconds`, `avg_total_seconds`, `trimmed_mean_total_seconds` y `stage_times.total`.
+
+Cuando se usa `-out`, el CLI tambien genera un resumen de ejecuciones en texto junto al JSON. Por ejemplo:
+
+```text
+code/Logistic_Rregression/results/compare.json
+code/Logistic_Rregression/results/compare_runs.txt
+```
+
+El archivo `_runs.txt` incluye cada ejecucion sin lectura CSV, alertas detectadas, alertas no detectadas, tiempo promedio de lectura CSV, promedio de stages, media recortada y tiempo total con lectura incluida.
+
 ## Concurrencia
 
 El modo concurrente usa goroutines, channels y workers en:

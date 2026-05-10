@@ -10,6 +10,8 @@ import (
 func RunSequential(cfg Config) (benchmark.Report, error) {
 	cfg = cfg.normalize()
 	times := make([]float64, 0, cfg.Runs)
+	totalTimes := make([]float64, 0, cfg.Runs)
+	readTimes := make([]float64, 0, cfg.Runs)
 	stages := make([]benchmark.StageTimes, 0, cfg.Runs)
 
 	var last runOutput
@@ -21,18 +23,24 @@ func RunSequential(cfg Config) (benchmark.Report, error) {
 		}
 		fmt.Fprintf(os.Stderr, "[sequential] run %d/%d finished in %.3fs\n", run+1, cfg.Runs, out.StageTimes.Total)
 		last = out
-		times = append(times, out.StageTimes.Total)
+		times = append(times, benchmark.ProcessingSeconds(out.StageTimes))
+		totalTimes = append(totalTimes, out.StageTimes.Total)
+		readTimes = append(readTimes, out.StageTimes.ReadCSV)
 		stages = append(stages, out.StageTimes)
 	}
 
 	result := benchmark.WorkerResult{
-		Workers:            1,
-		TimesSeconds:       times,
-		AvgSeconds:         benchmark.Average(times),
-		TrimmedMeanSeconds: benchmark.TrimmedMean(times),
-		Metrics:            last.Metrics,
-		StageTimes:         benchmark.AverageStageTimes(stages),
-		SplitMethod:        last.SplitMethod,
+		Workers:                 1,
+		TimesSeconds:            times,
+		TotalTimesSeconds:       totalTimes,
+		ReadCSVSeconds:          readTimes,
+		AvgSeconds:              benchmark.Average(times),
+		TrimmedMeanSeconds:      benchmark.TrimmedMean(times),
+		AvgTotalSeconds:         benchmark.Average(totalTimes),
+		TrimmedMeanTotalSeconds: benchmark.TrimmedMean(totalTimes),
+		Metrics:                 last.Metrics,
+		StageTimes:              benchmark.AverageStageTimes(stages),
+		SplitMethod:             last.SplitMethod,
 	}
 
 	return benchmark.Report{

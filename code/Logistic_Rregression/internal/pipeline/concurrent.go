@@ -29,6 +29,8 @@ func RunConcurrent(cfg Config, workersList []int) (benchmark.Report, error) {
 	for _, workers := range workersList {
 		fmt.Fprintf(os.Stderr, "[concurrent] workers=%d started\n", workers)
 		times := make([]float64, 0, cfg.Runs)
+		totalTimes := make([]float64, 0, cfg.Runs)
+		readTimes := make([]float64, 0, cfg.Runs)
 		stages := make([]benchmark.StageTimes, 0, cfg.Runs)
 
 		for run := 0; run < cfg.Runs; run++ {
@@ -39,7 +41,9 @@ func RunConcurrent(cfg Config, workersList []int) (benchmark.Report, error) {
 			}
 			fmt.Fprintf(os.Stderr, "[concurrent] workers=%d run %d/%d finished in %.3fs\n", workers, run+1, cfg.Runs, out.StageTimes.Total)
 			last = out
-			times = append(times, out.StageTimes.Total)
+			times = append(times, benchmark.ProcessingSeconds(out.StageTimes))
+			totalTimes = append(totalTimes, out.StageTimes.Total)
+			readTimes = append(readTimes, out.StageTimes.ReadCSV)
 			stages = append(stages, out.StageTimes)
 		}
 
@@ -50,14 +54,18 @@ func RunConcurrent(cfg Config, workersList []int) (benchmark.Report, error) {
 		}
 
 		results = append(results, benchmark.WorkerResult{
-			Workers:            workers,
-			TimesSeconds:       times,
-			AvgSeconds:         benchmark.Average(times),
-			TrimmedMeanSeconds: trimmed,
-			Metrics:            last.Metrics,
-			StageTimes:         benchmark.AverageStageTimes(stages),
-			SplitMethod:        last.SplitMethod,
-			ConcurrentSections: append([]string(nil), concurrentSections...),
+			Workers:                 workers,
+			TimesSeconds:            times,
+			TotalTimesSeconds:       totalTimes,
+			ReadCSVSeconds:          readTimes,
+			AvgSeconds:              benchmark.Average(times),
+			TrimmedMeanSeconds:      trimmed,
+			AvgTotalSeconds:         benchmark.Average(totalTimes),
+			TrimmedMeanTotalSeconds: benchmark.TrimmedMean(totalTimes),
+			Metrics:                 last.Metrics,
+			StageTimes:              benchmark.AverageStageTimes(stages),
+			SplitMethod:             last.SplitMethod,
+			ConcurrentSections:      append([]string(nil), concurrentSections...),
 		})
 	}
 

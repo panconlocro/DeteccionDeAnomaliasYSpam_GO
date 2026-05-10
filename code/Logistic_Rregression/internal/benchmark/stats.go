@@ -53,3 +53,11 @@ func AverageStageTimes(values []StageTimes) StageTimes {
 
 	return out
 }
+
+func ProcessingSeconds(stage StageTimes) float64 {
+	seconds := stage.Total - stage.ReadCSV
+	if seconds < 0 {
+		return 0
+	}
+	return seconds
+}
