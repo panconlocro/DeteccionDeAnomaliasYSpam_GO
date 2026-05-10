@@ -1,0 +1,424 @@
+REPORTE COMPARATIVO
+========================================================================
+MODO: SEQUENTIAL
+Filas dataset: 969115
+Filas train: 775292
+Filas test: 193823
+Runs: 5
+------------------------------------------------------------------------
+Configuracion: secuencial
+Ejecucion 1: 14.892011 segundos (sin lectura CSV)
+Ejecucion 2: 14.977938 segundos (sin lectura CSV)
+Ejecucion 3: 14.923276 segundos (sin lectura CSV)
+Ejecucion 4: 15.055071 segundos (sin lectura CSV)
+Ejecucion 5: 14.985888 segundos (sin lectura CSV)
+Alertas generadas por el modelo (TP+FP): 19856
+Alertas detectadas correctamente (TP): 15220
+Alertas no detectadas (FN): 20028
+Falsas alertas (FP): 4636
+Tiempo lectura CSV promedio: 0.606724 segundos
+Promedio de los stages sin lectura CSV: 14.966837 segundos
+Media recortada de los stages sin lectura CSV: 14.962367 segundos
+Tiempo total promedio con lectura CSV: 15.573561 segundos
+Media recortada total con lectura CSV: 15.573036 segundos
+Detalle promedio por stage:
+  read_csv: 0.606724
+  preprocess: 2.075115
+  vocabulary: 3.671555
+  vectorization: 6.747398
+  training: 1.328823
+  evaluation: 0.022083
+  total: 15.573561
+------------------------------------------------------------------------
+
+MODO: CONCURRENT
+Filas dataset: 969115
+Filas train: 775292
+Filas test: 193823
+Runs: 5
+Mejor workers por media recortada sin lectura CSV: 10
+------------------------------------------------------------------------
+Configuracion: workers=1
+Ejecucion 1: 17.404286 segundos (sin lectura CSV)
+Ejecucion 2: 17.669915 segundos (sin lectura CSV)
+Ejecucion 3: 17.430159 segundos (sin lectura CSV)
+Ejecucion 4: 17.567278 segundos (sin lectura CSV)
+Ejecucion 5: 17.421680 segundos (sin lectura CSV)
+Alertas generadas por el modelo (TP+FP): 19856
+Alertas detectadas correctamente (TP): 15220
+Alertas no detectadas (FN): 20028
+Falsas alertas (FP): 4636
+Tiempo lectura CSV promedio: 0.662364 segundos
+Promedio de los stages sin lectura CSV: 17.498663 segundos
+Media recortada de los stages sin lectura CSV: 17.473039 segundos
+Tiempo total promedio con lectura CSV: 18.161027 segundos
+Media recortada total con lectura CSV: 18.151288 segundos
+Detalle promedio por stage:
+  read_csv: 0.662364
+  preprocess: 2.838766
+  vocabulary: 3.622206
+  vectorization: 8.570590
+  training: 1.339345
+  evaluation: 0.022270
+  total: 18.161027
+------------------------------------------------------------------------
+Configuracion: workers=2
+Ejecucion 1: 11.738052 segundos (sin lectura CSV)
+Ejecucion 2: 11.733220 segundos (sin lectura CSV)
+Ejecucion 3: 11.831476 segundos (sin lectura CSV)
+Ejecucion 4: 11.853221 segundos (sin lectura CSV)
+Ejecucion 5: 11.837767 segundos (sin lectura CSV)
+Alertas generadas por el modelo (TP+FP): 19856
+Alertas detectadas correctamente (TP): 15220
+Alertas no detectadas (FN): 20028
+Falsas alertas (FP): 4636
+Tiempo lectura CSV promedio: 0.594751 segundos
+Promedio de los stages sin lectura CSV: 11.798747 segundos
+Media recortada de los stages sin lectura CSV: 11.802432 segundos
+Tiempo total promedio con lectura CSV: 12.393498 segundos
+Media recortada total con lectura CSV: 12.412282 segundos
+Detalle promedio por stage:
+  read_csv: 0.594751
+  preprocess: 1.919756
+  vocabulary: 2.093760
+  vectorization: 5.777162
+  training: 0.901725
+  evaluation: 0.014601
+  total: 12.393498
+------------------------------------------------------------------------
+Configuracion: workers=3
+Ejecucion 1: 9.043640 segundos (sin lectura CSV)
+Ejecucion 2: 9.033061 segundos (sin lectura CSV)
+Ejecucion 3: 9.048679 segundos (sin lectura CSV)
+Ejecucion 4: 9.018818 segundos (sin lectura CSV)
+Ejecucion 5: 9.180174 segundos (sin lectura CSV)
+Alertas generadas por el modelo (TP+FP): 19856
+Alertas detectadas correctamente (TP): 15220
+Alertas no detectadas (FN): 20028
+Falsas alertas (FP): 4636
+Tiempo lectura CSV promedio: 0.577312 segundos
+Promedio de los stages sin lectura CSV: 9.064875 segundos
+Media recortada de los stages sin lectura CSV: 9.041794 segundos
+Tiempo total promedio con lectura CSV: 9.642187 segundos
+Media recortada total con lectura CSV: 9.637091 segundos
+Detalle promedio por stage:
+  read_csv: 0.577312
+  preprocess: 1.505658
+  vocabulary: 1.568335
+  vectorization: 4.077328
+  training: 0.810437
+  evaluation: 0.010204
+  total: 9.642187
+------------------------------------------------------------------------
+Configuracion: workers=4
+Ejecucion 1: 8.138013 segundos (sin lectura CSV)
+Ejecucion 2: 8.031412 segundos (sin lectura CSV)
+Ejecucion 3: 8.042868 segundos (sin lectura CSV)
+Ejecucion 4: 7.928551 segundos (sin lectura CSV)
+Ejecucion 5: 7.985400 segundos (sin lectura CSV)
+Alertas generadas por el modelo (TP+FP): 19856
+Alertas detectadas correctamente (TP): 15220
+Alertas no detectadas (FN): 20028
+Falsas alertas (FP): 4636
+Tiempo lectura CSV promedio: 0.563240 segundos
+Promedio de los stages sin lectura CSV: 8.025249 segundos
+Media recortada de los stages sin lectura CSV: 8.019893 segundos
+Tiempo total promedio con lectura CSV: 8.588489 segundos
+Media recortada total con lectura CSV: 8.577754 segundos
+Detalle promedio por stage:
+  read_csv: 0.563240
+  preprocess: 1.273572
+  vocabulary: 1.325551
+  vectorization: 3.537835
+  training: 0.758988
+  evaluation: 0.008066
+  total: 8.588489
+------------------------------------------------------------------------
+Configuracion: workers=5
+Ejecucion 1: 7.207312 segundos (sin lectura CSV)
+Ejecucion 2: 7.139684 segundos (sin lectura CSV)
+Ejecucion 3: 7.177973 segundos (sin lectura CSV)
+Ejecucion 4: 7.209903 segundos (sin lectura CSV)
+Ejecucion 5: 7.044070 segundos (sin lectura CSV)
+Alertas generadas por el modelo (TP+FP): 19856
+Alertas detectadas correctamente (TP): 15220
+Alertas no detectadas (FN): 20028
+Falsas alertas (FP): 4636
+Tiempo lectura CSV promedio: 0.566744 segundos
+Promedio de los stages sin lectura CSV: 7.155788 segundos
+Media recortada de los stages sin lectura CSV: 7.174989 segundos
+Tiempo total promedio con lectura CSV: 7.722532 segundos
+Media recortada total con lectura CSV: 7.742366 segundos
+Detalle promedio por stage:
+  read_csv: 0.566744
+  preprocess: 1.121235
+  vocabulary: 1.154619
+  vectorization: 2.965791
+  training: 0.757304
+  evaluation: 0.006929
+  total: 7.722532
+------------------------------------------------------------------------
+Configuracion: workers=6
+Ejecucion 1: 6.527666 segundos (sin lectura CSV)
+Ejecucion 2: 6.710441 segundos (sin lectura CSV)
+Ejecucion 3: 6.594960 segundos (sin lectura CSV)
+Ejecucion 4: 6.632472 segundos (sin lectura CSV)
+Ejecucion 5: 6.686433 segundos (sin lectura CSV)
+Alertas generadas por el modelo (TP+FP): 19856
+Alertas detectadas correctamente (TP): 15220
+Alertas no detectadas (FN): 20028
+Falsas alertas (FP): 4636
+Tiempo lectura CSV promedio: 0.569111 segundos
+Promedio de los stages sin lectura CSV: 6.630394 segundos
+Media recortada de los stages sin lectura CSV: 6.637955 segundos
+Tiempo total promedio con lectura CSV: 7.199505 segundos
+Media recortada total con lectura CSV: 7.215746 segundos
+Detalle promedio por stage:
+  read_csv: 0.569111
+  preprocess: 1.000408
+  vocabulary: 1.064485
+  vectorization: 2.608507
+  training: 0.815837
+  evaluation: 0.006641
+  total: 7.199505
+------------------------------------------------------------------------
+Configuracion: workers=7
+Ejecucion 1: 6.278916 segundos (sin lectura CSV)
+Ejecucion 2: 6.289630 segundos (sin lectura CSV)
+Ejecucion 3: 6.230565 segundos (sin lectura CSV)
+Ejecucion 4: 6.497515 segundos (sin lectura CSV)
+Ejecucion 5: 6.332938 segundos (sin lectura CSV)
+Alertas generadas por el modelo (TP+FP): 19856
+Alertas detectadas correctamente (TP): 15220
+Alertas no detectadas (FN): 20028
+Falsas alertas (FP): 4636
+Tiempo lectura CSV promedio: 0.578158 segundos
+Promedio de los stages sin lectura CSV: 6.325913 segundos
+Media recortada de los stages sin lectura CSV: 6.300494 segundos
+Tiempo total promedio con lectura CSV: 6.904071 segundos
+Media recortada total con lectura CSV: 6.875008 segundos
+Detalle promedio por stage:
+  read_csv: 0.578158
+  preprocess: 0.938247
+  vocabulary: 1.068656
+  vectorization: 2.432106
+  training: 0.786699
+  evaluation: 0.005574
+  total: 6.904071
+------------------------------------------------------------------------
+Configuracion: workers=8
+Ejecucion 1: 6.414913 segundos (sin lectura CSV)
+Ejecucion 2: 6.154488 segundos (sin lectura CSV)
+Ejecucion 3: 6.167037 segundos (sin lectura CSV)
+Ejecucion 4: 6.399431 segundos (sin lectura CSV)
+Ejecucion 5: 6.264656 segundos (sin lectura CSV)
+Alertas generadas por el modelo (TP+FP): 19856
+Alertas detectadas correctamente (TP): 15220
+Alertas no detectadas (FN): 20028
+Falsas alertas (FP): 4636
+Tiempo lectura CSV promedio: 0.621993 segundos
+Promedio de los stages sin lectura CSV: 6.280105 segundos
+Media recortada de los stages sin lectura CSV: 6.277041 segundos
+Tiempo total promedio con lectura CSV: 6.902098 segundos
+Media recortada total con lectura CSV: 6.892897 segundos
+Detalle promedio por stage:
+  read_csv: 0.621993
+  preprocess: 0.887476
+  vocabulary: 1.072268
+  vectorization: 2.384789
+  training: 0.830668
+  evaluation: 0.005620
+  total: 6.902098
+------------------------------------------------------------------------
+Configuracion: workers=8
+Ejecucion 1: 6.213909 segundos (sin lectura CSV)
+Ejecucion 2: 6.110463 segundos (sin lectura CSV)
+Ejecucion 3: 6.115005 segundos (sin lectura CSV)
+Ejecucion 4: 6.182170 segundos (sin lectura CSV)
+Ejecucion 5: 6.187058 segundos (sin lectura CSV)
+Alertas generadas por el modelo (TP+FP): 19856
+Alertas detectadas correctamente (TP): 15220
+Alertas no detectadas (FN): 20028
+Falsas alertas (FP): 4636
+Tiempo lectura CSV promedio: 0.565561 segundos
+Promedio de los stages sin lectura CSV: 6.161721 segundos
+Media recortada de los stages sin lectura CSV: 6.161411 segundos
+Tiempo total promedio con lectura CSV: 6.727282 segundos
+Media recortada total con lectura CSV: 6.737018 segundos
+Detalle promedio por stage:
+  read_csv: 0.565561
+  preprocess: 0.896353
+  vocabulary: 1.047420
+  vectorization: 2.301475
+  training: 0.802250
+  evaluation: 0.005540
+  total: 6.727282
+------------------------------------------------------------------------
+Configuracion: workers=10
+Ejecucion 1: 6.055269 segundos (sin lectura CSV)
+Ejecucion 2: 6.072978 segundos (sin lectura CSV)
+Ejecucion 3: 6.094949 segundos (sin lectura CSV)
+Ejecucion 4: 6.117803 segundos (sin lectura CSV)
+Ejecucion 5: 6.127637 segundos (sin lectura CSV)
+Alertas generadas por el modelo (TP+FP): 19856
+Alertas detectadas correctamente (TP): 15220
+Alertas no detectadas (FN): 20028
+Falsas alertas (FP): 4636
+Tiempo lectura CSV promedio: 0.589548 segundos
+Promedio de los stages sin lectura CSV: 6.093727 segundos
+Media recortada de los stages sin lectura CSV: 6.095243 segundos
+Tiempo total promedio con lectura CSV: 6.683275 segundos
+Media recortada total con lectura CSV: 6.685236 segundos
+Detalle promedio por stage:
+  read_csv: 0.589548
+  preprocess: 0.867628
+  vocabulary: 1.032513
+  vectorization: 2.218719
+  training: 0.875626
+  evaluation: 0.005086
+  total: 6.683275
+------------------------------------------------------------------------
+Configuracion: workers=11
+Ejecucion 1: 6.133210 segundos (sin lectura CSV)
+Ejecucion 2: 6.374234 segundos (sin lectura CSV)
+Ejecucion 3: 6.254881 segundos (sin lectura CSV)
+Ejecucion 4: 6.261718 segundos (sin lectura CSV)
+Ejecucion 5: 6.308377 segundos (sin lectura CSV)
+Alertas generadas por el modelo (TP+FP): 19856
+Alertas detectadas correctamente (TP): 15220
+Alertas no detectadas (FN): 20028
+Falsas alertas (FP): 4636
+Tiempo lectura CSV promedio: 0.579715 segundos
+Promedio de los stages sin lectura CSV: 6.266484 segundos
+Media recortada de los stages sin lectura CSV: 6.274992 segundos
+Tiempo total promedio con lectura CSV: 6.846199 segundos
+Media recortada total con lectura CSV: 6.856579 segundos
+Detalle promedio por stage:
+  read_csv: 0.579715
+  preprocess: 0.886189
+  vocabulary: 1.083773
+  vectorization: 2.283324
+  training: 0.895843
+  evaluation: 0.004968
+  total: 6.846199
+------------------------------------------------------------------------
+Configuracion: workers=12
+Ejecucion 1: 6.183722 segundos (sin lectura CSV)
+Ejecucion 2: 6.160354 segundos (sin lectura CSV)
+Ejecucion 3: 6.304957 segundos (sin lectura CSV)
+Ejecucion 4: 6.212592 segundos (sin lectura CSV)
+Ejecucion 5: 6.122769 segundos (sin lectura CSV)
+Alertas generadas por el modelo (TP+FP): 19856
+Alertas detectadas correctamente (TP): 15220
+Alertas no detectadas (FN): 20028
+Falsas alertas (FP): 4636
+Tiempo lectura CSV promedio: 0.576916 segundos
+Promedio de los stages sin lectura CSV: 6.196879 segundos
+Media recortada de los stages sin lectura CSV: 6.185556 segundos
+Tiempo total promedio con lectura CSV: 6.773794 segundos
+Media recortada total con lectura CSV: 6.756258 segundos
+Detalle promedio por stage:
+  read_csv: 0.576916
+  preprocess: 0.861053
+  vocabulary: 1.115487
+  vectorization: 2.173810
+  training: 0.897223
+  evaluation: 0.004733
+  total: 6.773794
+------------------------------------------------------------------------
+Configuracion: workers=13
+Ejecucion 1: 6.104637 segundos (sin lectura CSV)
+Ejecucion 2: 6.152090 segundos (sin lectura CSV)
+Ejecucion 3: 6.054953 segundos (sin lectura CSV)
+Ejecucion 4: 6.207087 segundos (sin lectura CSV)
+Ejecucion 5: 6.336705 segundos (sin lectura CSV)
+Alertas generadas por el modelo (TP+FP): 19856
+Alertas detectadas correctamente (TP): 15220
+Alertas no detectadas (FN): 20028
+Falsas alertas (FP): 4636
+Tiempo lectura CSV promedio: 0.563920 segundos
+Promedio de los stages sin lectura CSV: 6.171095 segundos
+Media recortada de los stages sin lectura CSV: 6.154605 segundos
+Tiempo total promedio con lectura CSV: 6.735014 segundos
+Media recortada total con lectura CSV: 6.709927 segundos
+Detalle promedio por stage:
+  read_csv: 0.563920
+  preprocess: 0.878120
+  vocabulary: 1.081317
+  vectorization: 2.141369
+  training: 0.928483
+  evaluation: 0.005091
+  total: 6.735014
+------------------------------------------------------------------------
+Configuracion: workers=14
+Ejecucion 1: 6.097831 segundos (sin lectura CSV)
+Ejecucion 2: 6.201629 segundos (sin lectura CSV)
+Ejecucion 3: 6.258293 segundos (sin lectura CSV)
+Ejecucion 4: 6.129444 segundos (sin lectura CSV)
+Ejecucion 5: 6.040302 segundos (sin lectura CSV)
+Alertas generadas por el modelo (TP+FP): 19856
+Alertas detectadas correctamente (TP): 15220
+Alertas no detectadas (FN): 20028
+Falsas alertas (FP): 4636
+Tiempo lectura CSV promedio: 0.580827 segundos
+Promedio de los stages sin lectura CSV: 6.145500 segundos
+Media recortada de los stages sin lectura CSV: 6.142968 segundos
+Tiempo total promedio con lectura CSV: 6.726327 segundos
+Media recortada total con lectura CSV: 6.725113 segundos
+Detalle promedio por stage:
+  read_csv: 0.580827
+  preprocess: 0.882185
+  vocabulary: 1.106676
+  vectorization: 2.079810
+  training: 0.946468
+  evaluation: 0.005166
+  total: 6.726327
+------------------------------------------------------------------------
+Configuracion: workers=15
+Ejecucion 1: 6.067581 segundos (sin lectura CSV)
+Ejecucion 2: 6.262411 segundos (sin lectura CSV)
+Ejecucion 3: 6.183036 segundos (sin lectura CSV)
+Ejecucion 4: 6.148313 segundos (sin lectura CSV)
+Ejecucion 5: 6.093073 segundos (sin lectura CSV)
+Alertas generadas por el modelo (TP+FP): 19856
+Alertas detectadas correctamente (TP): 15220
+Alertas no detectadas (FN): 20028
+Falsas alertas (FP): 4636
+Tiempo lectura CSV promedio: 0.579628 segundos
+Promedio de los stages sin lectura CSV: 6.150883 segundos
+Media recortada de los stages sin lectura CSV: 6.141474 segundos
+Tiempo total promedio con lectura CSV: 6.730511 segundos
+Media recortada total con lectura CSV: 6.715589 segundos
+Detalle promedio por stage:
+  read_csv: 0.579628
+  preprocess: 0.865174
+  vocabulary: 1.120627
+  vectorization: 2.058758
+  training: 0.957084
+  evaluation: 0.005246
+  total: 6.730511
+------------------------------------------------------------------------
+Configuracion: workers=16
+Ejecucion 1: 6.086952 segundos (sin lectura CSV)
+Ejecucion 2: 6.174792 segundos (sin lectura CSV)
+Ejecucion 3: 6.210637 segundos (sin lectura CSV)
+Ejecucion 4: 6.114092 segundos (sin lectura CSV)
+Ejecucion 5: 6.055924 segundos (sin lectura CSV)
+Alertas generadas por el modelo (TP+FP): 19856
+Alertas detectadas correctamente (TP): 15220
+Alertas no detectadas (FN): 20028
+Falsas alertas (FP): 4636
+Tiempo lectura CSV promedio: 0.586876 segundos
+Promedio de los stages sin lectura CSV: 6.128479 segundos
+Media recortada de los stages sin lectura CSV: 6.125279 segundos
+Tiempo total promedio con lectura CSV: 6.715356 segundos
+Media recortada total con lectura CSV: 6.720854 segundos
+Detalle promedio por stage:
+  read_csv: 0.586876
+  preprocess: 0.862472
+  vocabulary: 1.083386
+  vectorization: 2.084580
+  training: 0.976210
+  evaluation: 0.005097
+  total: 6.715356
+------------------------------------------------------------------------
