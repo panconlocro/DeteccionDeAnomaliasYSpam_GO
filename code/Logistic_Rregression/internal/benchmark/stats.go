@@ -61,3 +61,39 @@ func ProcessingSeconds(stage StageTimes) float64 {
 	}
 	return seconds
 }
+
+func AverageResourceUsage(values []ResourceUsage) ResourceUsage {
+	if len(values) == 0 {
+		return ResourceUsage{}
+	}
+
+	var out ResourceUsage
+	for _, value := range values {
+		out.WallSeconds += value.WallSeconds
+		out.CPUPercent += value.CPUPercent
+		out.CPUUserSeconds += value.CPUUserSeconds
+		out.CPUSystemSeconds += value.CPUSystemSeconds
+		out.CPUTotalSeconds += value.CPUTotalSeconds
+		out.MaxRSSMB += value.MaxRSSMB
+		out.MaxHeapAllocMB += value.MaxHeapAllocMB
+		out.MaxHeapSysMB += value.MaxHeapSysMB
+		out.MaxGoSysMB += value.MaxGoSysMB
+		out.TotalAllocDeltaMB += value.TotalAllocDeltaMB
+		out.NumGCDelta += value.NumGCDelta
+	}
+
+	scale := 1 / float64(len(values))
+	out.WallSeconds *= scale
+	out.CPUPercent *= scale
+	out.CPUUserSeconds *= scale
+	out.CPUSystemSeconds *= scale
+	out.CPUTotalSeconds *= scale
+	out.MaxRSSMB *= scale
+	out.MaxHeapAllocMB *= scale
+	out.MaxHeapSysMB *= scale
+	out.MaxGoSysMB *= scale
+	out.TotalAllocDeltaMB *= scale
+	out.NumGCDelta *= scale
+
+	return out
+}

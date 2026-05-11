@@ -197,6 +197,13 @@ func writeReportSummary(file *os.File, report benchmark.Report) {
 
 		for i, seconds := range result.TimesSeconds {
 			fmt.Fprintf(file, "Ejecucion %d: %.6f segundos (sin lectura CSV)\n", i+1, seconds)
+			if i < len(result.ResourceRuns) {
+				resources := result.ResourceRuns[i]
+				fmt.Fprintf(file, "  Uso CPU promedio: %.2f%%\n", resources.CPUPercent)
+				fmt.Fprintf(file, "  RAM pico del proceso (RSS): %.2f MB\n", resources.MaxRSSMB)
+				fmt.Fprintf(file, "  CPU total acumulado: %.6f segundos\n", resources.CPUTotalSeconds)
+				fmt.Fprintf(file, "  Heap Go pico: %.2f MB\n", resources.MaxHeapAllocMB)
+			}
 		}
 
 		alertsGenerated := result.Metrics.TP + result.Metrics.FP
@@ -209,6 +216,14 @@ func writeReportSummary(file *os.File, report benchmark.Report) {
 		fmt.Fprintf(file, "Media recortada de los stages sin lectura CSV: %.6f segundos\n", result.TrimmedMeanSeconds)
 		fmt.Fprintf(file, "Tiempo total promedio con lectura CSV: %.6f segundos\n", result.AvgTotalSeconds)
 		fmt.Fprintf(file, "Media recortada total con lectura CSV: %.6f segundos\n", result.TrimmedMeanTotalSeconds)
+		fmt.Fprintln(file, "Recursos promedio por run:")
+		fmt.Fprintf(file, "  Uso CPU promedio: %.2f%%\n", result.ResourceUsage.CPUPercent)
+		fmt.Fprintf(file, "  RAM pico del proceso (RSS): %.2f MB\n", result.ResourceUsage.MaxRSSMB)
+		fmt.Fprintf(file, "  CPU total acumulado: %.6f segundos\n", result.ResourceUsage.CPUTotalSeconds)
+		fmt.Fprintf(file, "  CPU usuario: %.6f segundos\n", result.ResourceUsage.CPUUserSeconds)
+		fmt.Fprintf(file, "  CPU sistema: %.6f segundos\n", result.ResourceUsage.CPUSystemSeconds)
+		fmt.Fprintf(file, "  Heap Go pico: %.2f MB\n", result.ResourceUsage.MaxHeapAllocMB)
+		fmt.Fprintf(file, "  Memoria Go reservada pico: %.2f MB\n", result.ResourceUsage.MaxGoSysMB)
 		fmt.Fprintln(file, "Detalle promedio por stage:")
 		fmt.Fprintf(file, "  read_csv: %.6f\n", result.StageTimes.ReadCSV)
 		fmt.Fprintf(file, "  preprocess: %.6f\n", result.StageTimes.Preprocess)

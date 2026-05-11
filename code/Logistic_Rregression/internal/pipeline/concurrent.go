@@ -32,6 +32,7 @@ func RunConcurrent(cfg Config, workersList []int) (benchmark.Report, error) {
 		totalTimes := make([]float64, 0, cfg.Runs)
 		readTimes := make([]float64, 0, cfg.Runs)
 		stages := make([]benchmark.StageTimes, 0, cfg.Runs)
+		resources := make([]benchmark.ResourceUsage, 0, cfg.Runs)
 
 		for run := 0; run < cfg.Runs; run++ {
 			fmt.Fprintf(os.Stderr, "[concurrent] workers=%d run %d/%d started\n", workers, run+1, cfg.Runs)
@@ -45,6 +46,7 @@ func RunConcurrent(cfg Config, workersList []int) (benchmark.Report, error) {
 			totalTimes = append(totalTimes, out.StageTimes.Total)
 			readTimes = append(readTimes, out.StageTimes.ReadCSV)
 			stages = append(stages, out.StageTimes)
+			resources = append(resources, out.Resources)
 		}
 
 		trimmed := benchmark.TrimmedMean(times)
@@ -62,6 +64,8 @@ func RunConcurrent(cfg Config, workersList []int) (benchmark.Report, error) {
 			TrimmedMeanSeconds:      trimmed,
 			AvgTotalSeconds:         benchmark.Average(totalTimes),
 			TrimmedMeanTotalSeconds: benchmark.TrimmedMean(totalTimes),
+			ResourceRuns:            resources,
+			ResourceUsage:           benchmark.AverageResourceUsage(resources),
 			Metrics:                 last.Metrics,
 			StageTimes:              benchmark.AverageStageTimes(stages),
 			SplitMethod:             last.SplitMethod,

@@ -13,6 +13,7 @@ func RunSequential(cfg Config) (benchmark.Report, error) {
 	totalTimes := make([]float64, 0, cfg.Runs)
 	readTimes := make([]float64, 0, cfg.Runs)
 	stages := make([]benchmark.StageTimes, 0, cfg.Runs)
+	resources := make([]benchmark.ResourceUsage, 0, cfg.Runs)
 
 	var last runOutput
 	for run := 0; run < cfg.Runs; run++ {
@@ -27,6 +28,7 @@ func RunSequential(cfg Config) (benchmark.Report, error) {
 		totalTimes = append(totalTimes, out.StageTimes.Total)
 		readTimes = append(readTimes, out.StageTimes.ReadCSV)
 		stages = append(stages, out.StageTimes)
+		resources = append(resources, out.Resources)
 	}
 
 	result := benchmark.WorkerResult{
@@ -38,6 +40,8 @@ func RunSequential(cfg Config) (benchmark.Report, error) {
 		TrimmedMeanSeconds:      benchmark.TrimmedMean(times),
 		AvgTotalSeconds:         benchmark.Average(totalTimes),
 		TrimmedMeanTotalSeconds: benchmark.TrimmedMean(totalTimes),
+		ResourceRuns:            resources,
+		ResourceUsage:           benchmark.AverageResourceUsage(resources),
 		Metrics:                 last.Metrics,
 		StageTimes:              benchmark.AverageStageTimes(stages),
 		SplitMethod:             last.SplitMethod,

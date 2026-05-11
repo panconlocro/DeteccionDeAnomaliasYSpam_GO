@@ -21,6 +21,7 @@ type runOutput struct {
 	TestRows    int
 	Metrics     clfmodel.Metrics
 	StageTimes  benchmark.StageTimes
+	Resources   benchmark.ResourceUsage
 	SplitMethod string
 }
 
@@ -30,12 +31,14 @@ func runOnce(cfg Config, workers int, concurrent bool) (runOutput, error) {
 		workers = runtime.NumCPU()
 	}
 
+	stopResourceMonitor := benchmark.StartResourceMonitor(25 * time.Millisecond)
 	totalStart := time.Now()
 	var stages benchmark.StageTimes
 
 	start := time.Now()
 	records, err := data.LoadRecords(cfg.Input, cfg.Limit)
 	if err != nil {
+		_ = stopResourceMonitor()
 		return runOutput{}, err
 	}
 	stages.ReadCSV = time.Since(start).Seconds()
@@ -50,6 +53,7 @@ func runOnce(cfg Config, workers int, concurrent bool) (runOutput, error) {
 
 	trainRecords, testRecords, splitMethod, err := data.Split(records, cfg.TestRatio, cfg.Seed)
 	if err != nil {
+		_ = stopResourceMonitor()
 		return runOutput{}, err
 	}
 
@@ -104,6 +108,7 @@ func runOnce(cfg Config, workers int, concurrent bool) (runOutput, error) {
 	}
 	stages.Evaluation = time.Since(start).Seconds()
 	stages.Total = time.Since(totalStart).Seconds()
+	resources := stopResourceMonitor()
 
 	return runOutput{
 		DatasetRows: len(records),
@@ -111,6 +116,7 @@ func runOnce(cfg Config, workers int, concurrent bool) (runOutput, error) {
 		TestRows:    len(testRecords),
 		Metrics:     metrics,
 		StageTimes:  stages,
+		Resources:   resources,
 		SplitMethod: splitMethod,
 	}, nil
 }

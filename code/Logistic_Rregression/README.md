@@ -120,6 +120,14 @@ code/Logistic_Rregression/results/compare_runs.txt
 
 El archivo `_runs.txt` incluye cada ejecucion sin lectura CSV, alertas detectadas, alertas no detectadas, tiempo promedio de lectura CSV, promedio de stages, media recortada y tiempo total con lectura incluida.
 
+Tambien se registran recursos por ejecucion y promedios por configuracion:
+
+- CPU usuario, sistema y total usando `syscall.Getrusage`.
+- Memoria de Go usando `runtime.ReadMemStats`, muestreada durante cada run.
+- Pico de heap usado, heap reservado, memoria `Sys`, memoria asignada durante el run, ciclos de GC y pico de goroutines.
+
+Estas metricas son reproducibles y quedan guardadas en el JSON (`resource_runs` y `resource_usage`) y en el resumen `_runs.txt`.
+
 ## Concurrencia
 
 El modo concurrente usa goroutines, channels y workers en:
